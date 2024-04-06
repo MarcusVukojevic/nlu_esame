@@ -235,14 +235,35 @@ class LM_LSTM_2(nn.Module):
         self.intermediate = nn.Linear(hidden_size, emb_size)
         self.output_dropout = LockedDropout()  #nn.Dropout(out_dropout)
         self.output = nn.Linear(emb_size, output_size)
+
+        self.out_dropout = LockedDropout()
+        self.output = nn.Linear(hidden_size, output_size)
         
         # Weight tying
         self.output.weight = self.embedding.weight
-
+    '''
     def forward(self, input_sequence): 
         emb = self.embedding(input_sequence) 
         lstm_out, _  = self.lstm(emb) 
         # Pass LSTM output through intermediate layer to match emb_size
         intermediate_out = self.intermediate(lstm_out)
         output = self.output(intermediate_out).permute(0, 2, 1) 
+        return output
+    '''
+    def forward(self, input_sequence):
+        # Passaggio attraverso l'embedding layer
+        emb = self.embedding(input_sequence)
+        # Applicazione di LockedDropout all'embedding
+        emb = self.embedding_dropout(emb)  # Assumi emb_dropout = 0.1
+        
+        # Passaggio attraverso l'LSTM
+        lstm_out, _ = self.lstm(emb)
+        
+        # Passaggio attraverso il layer intermedio
+        intermediate_out = self.intermediate(lstm_out)
+        # Applicazione di LockedDropout all'output del layer intermedio
+        intermediate_out = self.output_dropout(intermediate_out)  # Assumi out_dropout = 0.1
+        
+        # Passaggio finale attraverso l'output layer
+        output = self.output(intermediate_out).permute(0, 2, 1)
         return output

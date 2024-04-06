@@ -32,7 +32,7 @@ test_loader = DataLoader(test_dataset, batch_size=128, collate_fn=partial(collat
 
 # Make sure the directories exist
 os.makedirs('model_bin', exist_ok=True)
-os.makedirs('perplexities', exist_ok=True)
+os.makedirs('test2', exist_ok=True)
 
 architettura = ["rnn", "lstm_no_drop", "lstm"]
 loss_model = ["sgd" , "adam", "avsgd", "nt-avsgd"]
@@ -100,6 +100,6 @@ for arch in architettura:
                     model_path = f'model_bin/{arch}2_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.pt'
                     torch.save(best_model.state_dict(), model_path)
                     # Save the perplexities
-                    with open(f'perplexities/{arch}2_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.txt', 'w') as f:
+                    with open(f'test2/{arch}2_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.txt', 'w') as f:
                         f.write(f'Test PPL: {final_ppl}\n')
                         f.write(f'Test PPL {final_ppl} for {arch} with LR={lear_rate}, with LOSS={losss}, with emb={params[1]}, hid={params[0]}: PPL: ')
