@@ -178,11 +178,11 @@ class LM_LSTM_2(nn.Module):
     def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=1): 
         super(LM_LSTM_2, self).__init__() 
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
-        self.embedding_dropout = nn.Dropout(emb_dropout)
+        self.embedding_dropout = LockedDropout()  #nn.Dropout(emb_dropout)
         self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False) 
         # Intermediate layer to map from hidden_size to emb_size
         self.intermediate = nn.Linear(hidden_size, emb_size)
-        self.output_dropout = nn.Dropout(out_dropout)
+        self.output_dropout = LockedDropout()  #nn.Dropout(out_dropout)
         self.output = nn.Linear(emb_size, output_size)
         
         # Weight tying
