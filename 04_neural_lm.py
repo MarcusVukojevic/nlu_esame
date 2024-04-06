@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch
 import math
 import numpy as np
-from nn_classes import RNN_cell, LM_LSTM, LM_RNN, Lang, PennTreeBank, LM_LSTM_NO_DROP
+from nn_classes import LM_LSTM, LM_RNN, Lang, PennTreeBank, LM_LSTM_NO_DROP
 from functools import partial
 from torch.utils.data import DataLoader
 from utils import read_file, get_vocab, collate_fn, init_weights, train_loop, eval_loop
@@ -42,7 +42,7 @@ learning_rate = [0.0001, 0.001]
 parametri = [(200, 300), (150, 250)]
 
 for arch in architettura:
-    if architettura == "lstm":
+    if arch == "lstm":
         for losss in loss_model:
             for lear_rate in learning_rate:
                 for params in parametri:
@@ -88,13 +88,14 @@ for arch in architettura:
                                 break # Not nice but it keeps the code clean
                     best_model.to(DEVICE)
                     final_ppl,  _ = eval_loop(test_loader, criterion_eval, best_model)
-                    print(f'Test PPL for {arch} with LR={lr}:', final_ppl)
+                    print(f'Test PPL for {arch} with LR={lr}, with LOSS={losss}, with emb={params[1]}, hid={params[0]}: PPL: ', final_ppl)
                     # Save the model
-                    model_path = f'model_bin/{arch}_LR{lr}_E{emb_size}_H{hid_size}.pt'
+                    model_path = f'model_bin/{arch}_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.pt'
                     torch.save(best_model.state_dict(), model_path)
                     # Save the perplexities
-                    with open(f'perplexities/{arch}_LR{lr}_E{emb_size}_H{hid_size}.txt', 'w') as f:
+                    with open(f'perplexities/{arch}_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.txt', 'w') as f:
                         f.write(f'Test PPL: {final_ppl}\n')
+                        f.write(f'Test PPL for {arch} with LR={lr}, with LOSS={losss}, with emb={params[1]}, hid={params[0]}: PPL: ', final_ppl)
     else:
         hid_size = 200
         emb_size = 300
@@ -146,11 +147,12 @@ for arch in architettura:
 
         best_model.to(DEVICE)
         final_ppl,  _ = eval_loop(test_loader, criterion_eval, best_model)
-        print(f'Test PPL for {arch} with LR={lr}:', final_ppl)
-
+        
+        print(f'Test PPL for {arch} with LR={lr}, with LOSS=SGD, with emb={emb_size}, hid={hid_size}: PPL: ', final_ppl)
         # Save the model
-        model_path = f'model_bin/{arch}_LR{lr}_E{emb_size}_H{hid_size}.pt'
+        model_path = f'model_bin/{arch}_LR{lr}_E{emb_size}_H{hid_size}_SGD.pt'
         torch.save(best_model.state_dict(), model_path)
         # Save the perplexities
-        with open(f'perplexities/{arch}_LR{lr}_E{emb_size}_H{hid_size}.txt', 'w') as f:
+        with open(f'perplexities/{arch}_LR{lr}_E{emb_size}_H{hid_size}_SGD.txt', 'w') as f:
             f.write(f'Test PPL: {final_ppl}\n')
+            f.write(f'Test PPL for {arch} with LR={lr}, with LOSS=SGD, with emb={emb_size}, hid={hid_size}: PPL: ', final_ppl)

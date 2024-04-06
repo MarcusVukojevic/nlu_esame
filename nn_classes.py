@@ -102,15 +102,15 @@ class LM_LSTM_NO_DROP(nn.Module):
         # Token ids to vectors, we will better see this in the next lab
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
         # Pytorch's RNN layer: https://pytorch.org/docs/stable/generated/torch.nn.RNN.html
-        self.rnn = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True)
+        self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True)
         self.pad_token = pad_index
         # Linear layer to project the hidden layer to our output space
         self.output = nn.Linear(hidden_size, output_size)
 
     def forward(self, input_sequence):
         emb = self.embedding(input_sequence)
-        rnn_out, _  = self.rnn(emb)
-        output = self.output(rnn_out).permute(0,2,1)
+        lstm_out, _  = self.lstm(emb)
+        output = self.output(lstm_out).permute(0,2,1)
         return output
 
 class LM_LSTM(nn.Module):
@@ -119,7 +119,7 @@ class LM_LSTM(nn.Module):
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
         # Embedding dropout layer
         self.emb_dropout = nn.Dropout(emb_dropout)
-        self.rnn = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True)
+        self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True)
         # Output dropout layer before the last linear layer
         self.out_dropout = nn.Dropout(out_dropout)
         self.output = nn.Linear(hidden_size, output_size)
@@ -128,9 +128,9 @@ class LM_LSTM(nn.Module):
         emb = self.embedding(input_sequence)
         # Apply embedding dropout
         emb = self.emb_dropout(emb)
-        rnn_out, _ = self.rnn(emb)
+        lstm_out, _ = self.lstm(emb)
         # Apply dropout before the last linear layer
-        rnn_out = self.out_dropout(rnn_out)
-        output = self.output(rnn_out).permute(0, 2, 1)
+        lstm_out = self.out_dropout(lstm_out)
+        output = self.output(lstm_out).permute(0, 2, 1)
         return output
     
