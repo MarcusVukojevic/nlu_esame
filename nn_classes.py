@@ -166,7 +166,7 @@ class LM_LSTM_2(nn.Module):
         self.output_dropout = LockedDropout() 
         self.output = nn.Linear(hidden_size, output_size) #CAMBIARE CON SOTMAX??? 
         #Use the same weights for both embedding and output layer -> WEIGHT TYING 
-        self.output = self.embedding.weight 
+        self.output.weight  = self.embedding.weight 
  
     def forward(self, input_sequence): 
         emb = self.embedding(input_sequence) 
