@@ -114,3 +114,8 @@ def init_weights(mat):
                 torch.nn.init.uniform_(m.weight, -0.01, 0.01)
                 if m.bias != None:
                     m.bias.data.fill_(0.01)
+
+
+#model.parameters(), lr=lear_rate, t0=0, lambd=0., weight_decay=1.2e-6
+def NT_AvSGD(params ,lr, t0, lambd, weight_decay, loggin_interval, non_mon_interval):
+    pass

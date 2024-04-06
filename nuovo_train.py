@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch
 import math
 import numpy as np
-from nn_classes import LM_LSTM, LM_LSTM_2, Lang, PennTreeBank, LM_LSTM_NO_DROP
+from nn_classes import LM_LSTM_2, Lang, PennTreeBank, NTASGD
 from functools import partial
 from torch.utils.data import DataLoader
 from utils import read_file, get_vocab, collate_fn, init_weights, train_loop, eval_loop
@@ -35,7 +35,8 @@ os.makedirs('model_bin', exist_ok=True)
 os.makedirs('perplexities', exist_ok=True)
 
 architettura = ["rnn", "lstm_no_drop", "lstm"]
-loss_model = ["sgd" , "adam", "avsgd"]
+loss_model = ["sgd" , "adam", "avsgd", "nt-avsgd"]
+loss_model = ["nt-avsgd"]
 
 
 learning_rate = [0.0001, 0.001]
@@ -57,8 +58,10 @@ for arch in architettura:
                         optimizer = optim.SGD(model.parameters(), lr=lear_rate)
                     elif losss == "adam":
                         optimizer = optim.AdamW(model.parameters(), lr=lear_rate)
+                    elif losss == "avsgd":
+                        optimizer = optim.ASGD(model.parameters(), lr=lear_rate, t0=0, lambd=0., weight_decay=1.2e-6)
                     else:
-                        optimizer = torch.optim.ASGD(model.parameters(), lr=lear_rate, t0=0, lambd=0., weight_decay=1.2e-6)
+                        optimizer = NTASGD(model.parameters(), lr=lear_rate, n=5, weight_decay=1.2e-6, fine_tuning=False)
 
 
                     criterion_train = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"])
