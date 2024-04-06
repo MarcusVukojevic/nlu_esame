@@ -98,6 +98,7 @@ for arch in architettura:
                         f.write(f'Test PPL: {final_ppl}\n')
                         f.write(f'Test PPL {final_ppl} for {arch} with LR={lr}, with LOSS={losss}, with emb={params[1]}, hid={params[0]}: PPL: ')
     else:
+        pass
         hid_size = 200
         emb_size = 300
 
