@@ -96,7 +96,7 @@ for arch in architettura:
                     # Save the perplexities
                     with open(f'perplexities/{arch}_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.txt', 'w') as f:
                         f.write(f'Test PPL: {final_ppl}\n')
-                        f.write(f'Test PPL for {arch} with LR={lr}, with LOSS={losss}, with emb={params[1]}, hid={params[0]}: PPL: ', final_ppl)
+                        f.write(f'Test PPL {final_ppl} for {arch} with LR={lr}, with LOSS={losss}, with emb={params[1]}, hid={params[0]}: PPL: ')
     else:
         hid_size = 200
         emb_size = 300
@@ -156,4 +156,4 @@ for arch in architettura:
         # Save the perplexities
         with open(f'perplexities/{arch}_LR{lr}_E{emb_size}_H{hid_size}_SGD.txt', 'w') as f:
             f.write(f'Test PPL: {final_ppl}\n')
-            f.write(f'Test PPL for {arch} with LR={lr}, with LOSS=SGD, with emb={emb_size}, hid={hid_size}: PPL: ', final_ppl)
+            f.write(f'Test PPL: {final_ppl} for {arch} with LR={lr}, with LOSS=SGD, with emb={emb_size}, hid={hid_size}: PPL: ')
