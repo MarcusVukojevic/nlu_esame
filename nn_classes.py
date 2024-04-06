@@ -159,11 +159,11 @@ class LM_LSTM_2(nn.Module):
         # Token ids to vectors, we will better see this in the next lab 
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index) 
         #do variational dropout 
-        self.embedding_dropout = LockedDropout() 
+        self.embedding_dropout = nn.Dropout(emb_dropout) #LockedDropout() 
         self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False) 
         self.pad_token = pad_index 
         #do variational dropout 
-        self.output_dropout = LockedDropout() 
+        self.output_dropout = nn.Dropout(emb_dropout) #LockedDropout() 
         self.output = nn.Linear(hidden_size, output_size) #CAMBIARE CON SOTMAX??? 
         #Use the same weights for both embedding and output layer -> WEIGHT TYING 
         self.output.weight  = self.embedding.weight 
