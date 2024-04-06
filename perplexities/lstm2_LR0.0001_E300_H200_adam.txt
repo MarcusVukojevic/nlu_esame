@@ -1,0 +1,2 @@
+Test PPL: 265.2608745062915
+Test PPL 265.2608745062915 for lstm with LR=0.0001, with LOSS=adam, with emb=300, hid=200: PPL: 

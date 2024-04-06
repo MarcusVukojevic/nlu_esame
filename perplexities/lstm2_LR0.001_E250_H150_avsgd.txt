@@ -1,0 +1,2 @@
+Test PPL: 878.4361576948063
+Test PPL 878.4361576948063 for lstm with LR=0.001, with LOSS=avsgd, with emb=250, hid=150: PPL: 
