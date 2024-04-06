@@ -170,6 +170,6 @@ class LM_LSTM_2(nn.Module):
  
     def forward(self, input_sequence): 
         emb = self.embedding(input_sequence) 
-        lstm_out, _  = self.rnn(emb) 
+        lstm_out, _  = self.lstm(emb) 
         output = self.output(lstm_out).permute(0,2,1) 
         return output
