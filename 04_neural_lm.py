@@ -10,7 +10,6 @@ from nn_classes import RNN_cell, LM_LSTM, LM_RNN, Lang, PennTreeBank, LM_LSTM_NO
 from functools import partial
 from torch.utils.data import DataLoader
 from utils import read_file, get_vocab, collate_fn, init_weights, train_loop, eval_loop
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 import copy
 import os
