@@ -39,7 +39,7 @@ loss_model = ["sgd" , "adam", "avsgd", "nt-avsgd"]
 loss_model = ["nt-avsgd"]
 
 
-learning_rate = [0.0001, 0.001]
+learning_rate = [0.0001, 0.001, 0.01]
 parametri = [(200, 300), (150, 250)]
 
 for arch in architettura:
