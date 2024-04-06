@@ -1,0 +1,2 @@
+Test PPL: 975.1822701764373
+Test PPL 975.1822701764373 for lstm with LR=0.0001, with LOSS=sgd, with emb=300, hid=200: PPL: 

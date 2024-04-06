@@ -1,0 +1,2 @@
+Test PPL: 6411.720063179813
+Test PPL: 6411.720063179813 for rnn with LR=0.0001, with LOSS=SGD, with emb=300, hid=200: PPL: 

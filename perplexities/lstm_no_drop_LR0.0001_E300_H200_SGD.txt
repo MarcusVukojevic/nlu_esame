@@ -1,0 +1,2 @@
+Test PPL: 8859.377101636112
+Test PPL: 8859.377101636112 for lstm_no_drop with LR=0.0001, with LOSS=SGD, with emb=300, hid=200: PPL: 
