@@ -134,3 +134,42 @@ class LM_LSTM(nn.Module):
         output = self.output(lstm_out).permute(0, 2, 1)
         return output
     
+
+import torch 
+import torch.nn as nn 
+from torch.autograd import Variable 
+ 
+ 
+class LockedDropout(nn.Module): 
+    def __init__(self): 
+        super().__init__() 
+ 
+    def forward(self, x, dropout=0.5): 
+        if not self.training or not dropout: 
+            return x 
+        m = x.data.new(1, x.size(1), x.size(2)).bernoulli_(1 - dropout) 
+        mask = Variable(m, requires_grad=False) / (1 - dropout) 
+        mask = mask.expand_as(x) 
+        return mask * x 
+ 
+class LM_LSTM_2(nn.Module): 
+    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, 
+                 emb_dropout=0.1, n_layers=1): 
+        super(LM_LSTM, self).__init__() 
+        # Token ids to vectors, we will better see this in the next lab 
+        self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index) 
+        #do variational dropout 
+        self.embedding_dropout = LockedDropout() 
+        self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False) 
+        self.pad_token = pad_index 
+        #do variational dropout 
+        self.output_dropout = LockedDropout() 
+        self.output = nn.Linear(hidden_size, output_size) #CAMBIARE CON SOTMAX??? 
+        #Use the same weights for both embedding and output layer -> WEIGHT TYING 
+        self.output = self.embedding.weight 
+ 
+    def forward(self, input_sequence): 
+        emb = self.embedding(input_sequence) 
+        lstm_out, _  = self.rnn(emb) 
+        output = self.output(lstm_out).permute(0,2,1) 
+        return output
