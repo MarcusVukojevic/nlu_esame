@@ -42,6 +42,7 @@ learning_rate = [0.0001, 0.001]
 parametri = [(200, 300), (150, 250)]
 
 for arch in architettura:
+    print("arch: ", arch)
     if arch == "lstm":
         for losss in loss_model:
             for lear_rate in learning_rate:
