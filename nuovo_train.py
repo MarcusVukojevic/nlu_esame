@@ -97,9 +97,9 @@ for arch in architettura:
                     final_ppl,  _ = eval_loop(test_loader, criterion_eval, best_model)
                     print(f'Test PPL for {arch} with LR={lear_rate}, with LOSS={losss}, with emb={params[1]}, hid={params[0]}: PPL: ', final_ppl)
                     # Save the model
-                    model_path = f'model_bin/NOT-TY{arch}2_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.pt'
+                    model_path = f'model_bin/TY{arch}2_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.pt'
                     torch.save(best_model.state_dict(), model_path)
                     # Save the perplexities
-                    with open(f'test2/NOT-TY{arch}2_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.txt', 'w') as f:
+                    with open(f'test2/TY{arch}2_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.txt', 'w') as f:
                         f.write(f'Test PPL: {final_ppl}\n')
                         f.write(f'Test PPL {final_ppl} for {arch} with LR={lear_rate}, with LOSS={losss}, with emb={params[1]}, hid={params[0]}: PPL: ')
