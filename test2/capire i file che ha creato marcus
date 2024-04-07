@@ -1,0 +1,2 @@
+NOT-TY : senza weight tying
+TYlstm2 e lstm2 : sono entrambi cin weight tying
