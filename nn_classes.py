@@ -271,10 +271,9 @@ class LM_LSTM_2(nn.Module):
         '''
         emb = self.embedding(input_sequence)
         # Apply embedding dropout
-        emb = self.emb_dropout(emb)
+        emb = self.embedding_dropout(emb)
         lstm_out, _ = self.lstm(emb)
         # Apply dropout before the last linear layer
         lstm_out = self.out_dropout(lstm_out)
         output = self.output(lstm_out).permute(0, 2, 1)
         return output
-        
