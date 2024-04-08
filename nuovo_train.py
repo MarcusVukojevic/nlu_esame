@@ -41,7 +41,7 @@ loss_model = ["nt-avsgd"]
 
 learning_rate = [0.1]
 parametri = [(600, 600) , (200, 300), (150, 250)]
-#parametri = [(600, 600)]
+parametri = [(200, 300)]
 
 for arch in architettura:
     print("arch: ", arch)
