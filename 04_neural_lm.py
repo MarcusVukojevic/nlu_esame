@@ -41,6 +41,8 @@ loss_model = ["sgd" , "adam"]
 learning_rate = [0.0001, 0.001]
 parametri = [(200, 300), (150, 250)]
 
+parametri = [(300, 300)]
+
 for arch in architettura:
     print("arch: ", arch)
     if arch == "lstm":

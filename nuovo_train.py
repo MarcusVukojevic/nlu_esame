@@ -15,7 +15,7 @@ import copy
 import os
 
 
-DEVICE = 'cuda:0'
+DEVICE = 'cpu:0'
 
 train_raw = read_file("dataset/PennTreeBank/ptb.train.txt")
 dev_raw = read_file("dataset/PennTreeBank/ptb.valid.txt")
@@ -39,9 +39,9 @@ loss_model = ["sgd" , "adam", "avsgd", "nt-avsgd"]
 loss_model = ["nt-avsgd"]
 
 
-learning_rate = [0.1]
+learning_rate = [0.01]
 parametri = [(600, 600) , (200, 300), (150, 250)]
-parametri = [(200, 300)]
+parametri = [(300, 300)]
 
 for arch in architettura:
     print("arch: ", arch)
@@ -53,7 +53,7 @@ for arch in architettura:
 
                     clip = 5 # Clip the gradient
                     vocab_len = len(lang.word2id)
-                    model = LM_LSTM_2(params[1], params[0], vocab_len, pad_index=lang.word2id["<pad>"]).to(DEVICE)
+                    model = LM_LSTM_2(params[1], params[0], vocab_len, pad_index=lang.word2id["<pad>"])#.to(DEVICE)
                     model.apply(init_weights)
                     if losss == "sgd":
                         optimizer = optim.SGD(model.parameters(), lr=lear_rate)
