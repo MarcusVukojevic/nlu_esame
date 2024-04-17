@@ -230,7 +230,7 @@ class LM_LSTM_2(nn.Module):
         super(LM_LSTM_2, self).__init__() 
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
         self.embedding_dropout = LockedDropout()  #nn.Dropout(emb_dropout)
-        self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False) 
+        self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True) 
         # Intermediate layer to map from hidden_size to emb_size
         self.out_dropout = LockedDropout()
         self.output = nn.Linear(hidden_size, output_size)
