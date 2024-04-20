@@ -14,12 +14,15 @@ from tqdm import tqdm
 import copy
 import os
 
+from ottimizzatore import Nt_AvSGD
 
 DEVICE = 'cpu:0'
 
-train_raw = read_file("dataset/PennTreeBank/ptb.train.txt")
-dev_raw = read_file("dataset/PennTreeBank/ptb.valid.txt")
-test_raw = read_file("dataset/PennTreeBank/ptb.test.txt")
+train_raw = read_file("dataset/PennTreeBank/ptb.train.txt")#[-1000:]
+dev_raw = read_file("dataset/PennTreeBank/ptb.valid.txt")#[-100:]
+test_raw = read_file("dataset/PennTreeBank/ptb.test.txt")#[-100:]
+
+
 vocab = get_vocab(train_raw, ["<pad>", "<eos>"])
 lang = Lang(train_raw, ["<pad>", "<eos>"])
 train_dataset = PennTreeBank(train_raw, lang)
@@ -62,14 +65,14 @@ for arch in architettura:
                     elif losss == "avsgd":
                         optimizer = optim.ASGD(model.parameters(), lr=lear_rate, t0=0, lambd=0., weight_decay=1.2e-6)
                     else:
-                        optimizer = NTASGD(model.parameters(), lr=lear_rate, n=5, weight_decay=1.2e-6, fine_tuning=False)
+                        optimizer = Nt_AvSGD(model.parameters(), lr=1, n=5)
 
 
                     criterion_train = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"])
                     criterion_eval = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"], reduction='sum')
 
                     n_epochs = 100
-                    patience = 3
+                    patience = 6
                     losses_train = []
                     losses_dev = []
                     sampled_epochs = []
@@ -83,16 +86,18 @@ for arch in architettura:
                             sampled_epochs.append(epoch)
                             losses_train.append(np.asarray(loss).mean())
                             ppl_dev, loss_dev = eval_loop(dev_loader, criterion_eval, model)
+                            #optimizer.check(ppl_dev)
                             losses_dev.append(np.asarray(loss_dev).mean())
                             pbar.set_description("PPL: %f" % ppl_dev)
                             if  ppl_dev < best_ppl: # the lower, the better
                                 best_ppl = ppl_dev
                                 best_model = copy.deepcopy(model).to('cpu')
-                                patience = 3
+                                patience = 6
                             else:
                                 patience -= 1
 
                             if patience <= 0: # Early stopping with patience
+                                print("early stucazz")
                                 break # Not nice but it keeps the code clean
                     best_model.to(DEVICE)
                     final_ppl,  _ = eval_loop(test_loader, criterion_eval, best_model)

@@ -96,8 +96,7 @@ class LM_RNN(nn.Module):
         return output
     
 class LM_LSTM_NO_DROP(nn.Module):
-    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1,
-                 emb_dropout=0.1, n_layers=1):
+    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=1):
         super(LM_LSTM_NO_DROP, self).__init__()
         # Token ids to vectors, we will better see this in the next lab
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
@@ -185,6 +184,7 @@ class NTASGD(optim.Optimizer):
         super(NTASGD, self).__init__(params, defaults)
 
     def check(self, v):
+        #print("gugu")
         for group in self.param_groups:
             #Training
             if (not group['fine_tuning'] and group['t0'] == 10e7) or (group['fine_tuning']):
@@ -200,10 +200,16 @@ class NTASGD(optim.Optimizer):
             group['lr'] = lr
                                
     def step(self):
+        #print(self.param_groups[0])
+        
         for group in self.param_groups:
+            print("GROUP:" )
             for p in group['params']:
+                #print("p: ", p)
                 grad = p.grad.data
+                #print("grad:" , grad)
                 state = self.state[p]
+                #print("state:" , state)
                 # State initialization
                 if len(state) == 0:
                     state['step'] = 0
@@ -214,6 +220,7 @@ class NTASGD(optim.Optimizer):
                 if group['weight_decay'] != 0:
                     grad = grad.add(group['weight_decay'], p.data)
                 
+                #print("pensio sia il gradient step: ")
                 p.data.add_(-group['lr'], grad)
                 # averaging
                 if state['mu'] != 1:
@@ -223,48 +230,34 @@ class NTASGD(optim.Optimizer):
                 # update mu
                 state['mu'] = 1 / max(1, state['step'] - group['t0'])
 
-
-
-class LM_LSTM_2(nn.Module): 
+class LM_LSTM_2_WT(nn.Module): 
     def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=3): 
-        super(LM_LSTM_2, self).__init__() 
+        super(LM_LSTM_2_WT, self).__init__() 
+        self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
+        self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True) 
+        self.output = nn.Linear(hidden_size, output_size)
+        self.output.weight = self.embedding.weight
+
+    def forward(self, input_sequence):
+        emb = self.embedding(input_sequence)
+        lstm_out, _ = self.lstm(emb)
+        output = self.output(lstm_out).permute(0, 2, 1)
+        return output
+        
+
+
+class LM_LSTM_2_COMPLETA(nn.Module): 
+    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=3): 
+        super(LM_LSTM_2_COMPLETA, self).__init__() 
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
         self.embedding_dropout = LockedDropout()  #nn.Dropout(emb_dropout)
         self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True) 
         # Intermediate layer to map from hidden_size to emb_size
         self.out_dropout = LockedDropout()
         self.output = nn.Linear(hidden_size, output_size)
-        
-        
         self.output.weight = self.embedding.weight
-    '''
-    def forward(self, input_sequence): 
-        emb = self.embedding(input_sequence) 
-        lstm_out, _  = self.lstm(emb) 
-        # Pass LSTM output through intermediate layer to match emb_size
-        intermediate_out = self.intermediate(lstm_out)©
-        output = self.output(intermediate_out).permute(0, 2, 1) 
-        return output
-    '''
+
     def forward(self, input_sequence):
-        '''
-        # Passaggio attraverso l'embedding layer
-        emb = self.embedding(input_sequence)
-        # Applicazione di LockedDropout all'embedding
-        emb = self.embedding_dropout(emb)  # Assumi emb_dropout = 0.1
-        
-        # Passaggio attraverso l'LSTM
-        lstm_out, _ = self.lstm(emb)
-        
-        # Passaggio attraverso il layer intermedio
-        intermediate_out = self.intermediate(lstm_out)
-        # Applicazione di LockedDropout all'output del layer intermedio
-        intermediate_out = self.output_dropout(intermediate_out)  # Assumi out_dropout = 0.1
-        
-        # Passaggio finale attraverso l'output layer
-        output = self.output(intermediate_out).permute(0, 2, 1)
-        return output
-        '''
         emb = self.embedding(input_sequence)
         # Apply embedding dropout
         emb = self.embedding_dropout(emb)

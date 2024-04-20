@@ -69,6 +69,7 @@ def train_loop(data, optimizer, criterion, model, clip=5):
         optimizer.zero_grad() # Zeroing the gradient
         output = model(sample['source'])
         loss = criterion(output, sample['target'])
+        #optimizer.check(loss)
         loss_array.append(loss.item() * sample["number_tokens"])
         number_of_tokens.append(sample["number_tokens"])
         loss.backward() # Compute the gradient, deleting the computational graph
@@ -114,8 +115,3 @@ def init_weights(mat):
                 torch.nn.init.uniform_(m.weight, -0.01, 0.01)
                 if m.bias != None:
                     m.bias.data.fill_(0.01)
-
-
-#model.parameters(), lr=lear_rate, t0=0, lambd=0., weight_decay=1.2e-6
-def NT_AvSGD(params ,lr, t0, lambd, weight_decay, loggin_interval, non_mon_interval):
-    pass
