@@ -16,7 +16,7 @@ import os
 
 from ottimizzatore import Nt_AvSGD
 
-DEVICE = 'cpu:0'
+DEVICE = 'cuda:0'
 cartella_risultati = "risultati"
 os.makedirs(f'{cartella_risultati}', exist_ok=True)
 
