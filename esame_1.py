@@ -78,12 +78,13 @@ assignments["6"][1] = Nt_AvSGD(assignments["6"][0].parameters(), lr=learning_rat
 
 
 for i in range(1,7):
+    print("Esperimento: ", assignments["1"][2])
     model = assignments[f"{i}"][0].to(DEVICE)
     model.apply(init_weights)
 
     optimizer = assignments[f"{i}"][1]
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1) # così mi cambia la lr in modo automatico
-    
+
     criterion_train = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"])
     criterion_eval = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"], reduction='sum')
     losses_train = []
