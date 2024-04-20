@@ -101,7 +101,9 @@ for i in range(1,7):
             losses_train.append(np.asarray(loss).mean())
             ppl_dev, loss_dev = eval_loop(dev_loader, criterion_eval, model)
             scheduler.step(loss_dev)
-            #optimizer.check(ppl_dev)
+            if i == 6:
+                optimizer.check(ppl_dev)
+            
             losses_dev.append(np.asarray(loss_dev).mean())
             pbar.set_description("PPL: %f" % ppl_dev)
             if  ppl_dev < best_ppl: # the lower, the better
