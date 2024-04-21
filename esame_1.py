@@ -14,11 +14,25 @@ from tqdm import tqdm
 import copy
 import os
 
-from ottimizzatore import Nt_AvSGD
+from ottimizzatore import Nt_AvSGD # ottimizzatore custom
 
 DEVICE = 'cuda:0'
+
+
 cartella_risultati = "risultati"
+
 os.makedirs(f'{cartella_risultati}', exist_ok=True)
+os.makedirs('modelli', exist_ok=True)
+
+os.chdir("risultati")
+# Conta i file nella cartella
+num_files = len([name for name in os.listdir('.') if os.path.isfile(name)])
+
+# visto che ho 6 file per esperimento, almeno non li sovrascrive
+multipli_di_6 = num_files // 6
+
+os.chdir("..")
+
 
 train_raw = read_file("dataset/PennTreeBank/ptb.train.txt")#[-1000:]
 dev_raw = read_file("dataset/PennTreeBank/ptb.valid.txt")#[-100:]
@@ -71,14 +85,15 @@ assignments = {
 
 assignments["1"][1] = optim.SGD(assignments["1"][0].parameters(), lr=learning_rate)
 assignments["2"][1] = optim.SGD(assignments["2"][0].parameters(), lr=learning_rate)
-assignments["3"][1] = optim.AdamW(assignments["3"][0].parameters(), lr=learning_rate)
+assignments["3"][1] = optim.AdamW(assignments["3"][0].parameters(), lr=0.001) # dopo esperimento 1: abbasso learning rate per Adam
 assignments["4"][1] = optim.SGD(assignments["4"][0].parameters(), lr=learning_rate)
 assignments["5"][1] = optim.SGD(assignments["5"][0].parameters(), lr=learning_rate)
 assignments["6"][1] = Nt_AvSGD(assignments["6"][0].parameters(), lr=learning_rate, n=5)
 
 
 for i in range(1,7):
-    print("Esperimento: ", assignments["1"][2])
+
+    print("Esperimento: ", assignments[f"{i}"][2])
     model = assignments[f"{i}"][0].to(DEVICE)
     model.apply(init_weights)
 
@@ -122,8 +137,8 @@ for i in range(1,7):
     
     print(f'Test PPL for {assignments[f"{i}"][2]} --> ', final_ppl)
     # Save the model
-    #model_path = f'drop_out_01/TY{arch}2_LR{lear_rate}_E{params[1]}_H{params[0]}_{losss}.pt'
-    #torch.save(best_model.state_dict(), model_path)
+    model_path = f'modelli/esperimento_{multipli_di_6}_{assignments[f"{i}"][2]}.pt'
+    torch.save(best_model.state_dict(), model_path)
     # Save the perplexities
-    with open(f'{cartella_risultati}/esperimento_{assignments[f"{i}"][2]}.txt', 'w') as f:
+    with open(f'{cartella_risultati}/esperimento_{multipli_di_6}_{assignments[f"{i}"][2]}.txt', 'w') as f:
         f.write(f'Perplexity finale: {final_ppl}\n')
