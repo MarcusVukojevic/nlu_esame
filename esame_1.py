@@ -66,7 +66,7 @@ architettura = ["lstm_no_drop", "lstm", 'lstm-wt', 'lstm-completa']
 loss_model = ["sgd" , "adam", "nt-avsgd"]
 
 parametri = [300, 300]
-learning_rate = 1
+learning_rate = .1
 
 clip = 5 # Clip the gradient
 vocab_len = len(lang.word2id)
@@ -93,6 +93,7 @@ assignments["6"][1] = Nt_AvSGD(assignments["6"][0].parameters(), lr=learning_rat
 
 for i in range(1,7):
 
+    learning_rates = []
     print("Esperimento: ", assignments[f"{i}"][2])
     model = assignments[f"{i}"][0].to(DEVICE)
     model.apply(init_weights)
@@ -115,6 +116,11 @@ for i in range(1,7):
             sampled_epochs.append(epoch)
             losses_train.append(np.asarray(loss).mean())
             ppl_dev, loss_dev = eval_loop(dev_loader, criterion_eval, model)
+
+            # tengo traccia delle learning rates
+            for param_group in optimizer.param_groups:
+                learning_rates.append(f"Epoch {epoch+1}, Current LR: {param_group['lr']}")
+    
             scheduler.step(loss_dev)
             if i == 6:
                 optimizer.check(ppl_dev)
@@ -141,4 +147,4 @@ for i in range(1,7):
     torch.save(best_model.state_dict(), model_path)
     # Save the perplexities
     with open(f'{cartella_risultati}/esperimento_{multipli_di_6}_{assignments[f"{i}"][2]}.txt', 'w') as f:
-        f.write(f'Perplexity finale: {final_ppl}\n')
+        f.write(f'Perplexity finale: {final_ppl}, learning_rates: {learning_rates}\n')
