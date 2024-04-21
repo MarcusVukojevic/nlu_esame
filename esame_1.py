@@ -66,7 +66,7 @@ architettura = ["lstm_no_drop", "lstm", 'lstm-wt', 'lstm-completa']
 loss_model = ["sgd" , "adam", "nt-avsgd"]
 
 parametri = [300, 300]
-learning_rate = 1
+learning_rate = 2
 
 clip = 5 # Clip the gradient
 vocab_len = len(lang.word2id)
