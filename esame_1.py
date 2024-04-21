@@ -121,10 +121,11 @@ for i in range(1,7):
 
             # tengo traccia delle learning rates
             for param_group in optimizer.param_groups:
-                print(f"Epoch {epoch+1}, Current LR: {param_group['lr']}")
+                #print(f"Epoch {epoch+1}, Current LR: {param_group['lr']}")
                 learning_rates.append(f"Epoch {epoch+1}, Current LR: {param_group['lr']}")
     
-            scheduler.step() #chiamo lo step dello scheduler
+            if i != 3:
+                scheduler.step() #chiamo lo step dello scheduler
             if i == 6:
                 optimizer.check(ppl_dev)
             
