@@ -99,7 +99,9 @@ for i in range(1,7):
     model.apply(init_weights)
 
     optimizer = assignments[f"{i}"][1]
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1) # così mi cambia la lr in modo automatico
+    #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1) # così mi cambia la lr in modo automatico
+    scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=0.95)
+
 
     criterion_train = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"])
     criterion_eval = nn.CrossEntropyLoss(ignore_index=lang.word2id["<pad>"], reduction='sum')
@@ -121,7 +123,7 @@ for i in range(1,7):
             for param_group in optimizer.param_groups:
                 learning_rates.append(f"Epoch {epoch+1}, Current LR: {param_group['lr']}")
     
-            scheduler.step(loss_dev)
+            scheduler.step() #chiamo lo step dello scheduler
             if i == 6:
                 optimizer.check(ppl_dev)
             
