@@ -11,12 +11,10 @@ import os
 import numpy as np
 from functools import partial
 
-from .model import LM_LSTM_2_COMPLETA, Lang, PennTreeBank, LM_LSTM_NO_DROP, LM_LSTM, LM_LSTM_2_WT
-from .utils import read_file, get_vocab, collate_fn
-from .functions import init_weights, train_loop, eval_loop
+from model import LM_LSTM_2_COMPLETA, Lang, PennTreeBank, LM_LSTM_NO_DROP, LM_LSTM, LM_LSTM_2_WT, Nt_AvSGD # ottimizzatore custom
+from utils import read_file, get_vocab, collate_fn
+from functions import init_weights, train_loop, eval_loop
 
-
-from ottimizzatore import Nt_AvSGD # ottimizzatore custom
 
 DEVICE = 'cuda:0'
 
