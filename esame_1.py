@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch
 import math
 import numpy as np
-from nn_classes import LM_LSTM_2_COMPLETA, Lang, PennTreeBank, LM_LSTM_NO_DROP, LM_LSTM, LM_LSTM_2_WT
+from nn_classes import LM_LSTM_2_COMPLETA, Lang, PennTreeBank, LM_LSTM_NO_DROP, LM_LSTM, LM_LSTM_2_WT, LM_LSTM_prova
 from functools import partial
 from torch.utils.data import DataLoader
 from utils import read_file, get_vocab, collate_fn, init_weights, train_loop, eval_loop
@@ -44,7 +44,7 @@ lang = Lang(train_raw, ["<pad>", "<eos>"])
 train_dataset = PennTreeBank(train_raw, lang)
 dev_dataset = PennTreeBank(dev_raw, lang)
 test_dataset = PennTreeBank(test_raw, lang)
-train_loader = DataLoader(train_dataset, batch_size=64, collate_fn=partial(collate_fn, pad_token=lang.word2id["<pad>"]),  shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=40, collate_fn=partial(collate_fn, pad_token=lang.word2id["<pad>"]),  shuffle=True)
 dev_loader = DataLoader(dev_dataset, batch_size=128, collate_fn=partial(collate_fn, pad_token=lang.word2id["<pad>"]))
 test_loader = DataLoader(test_dataset, batch_size=128, collate_fn=partial(collate_fn, pad_token=lang.word2id["<pad>"]))
 
@@ -66,7 +66,7 @@ architettura = ["lstm_no_drop", "lstm", 'lstm-wt', 'lstm-completa']
 loss_model = ["sgd" , "adam", "nt-avsgd"]
 
 parametri = [300, 300]
-learning_rate = 2
+learning_rate = 30
 
 clip = 5 # Clip the gradient
 vocab_len = len(lang.word2id)
@@ -81,6 +81,7 @@ assignments = {
     "4": [LM_LSTM_2_WT(parametri[1], parametri[0], vocab_len, pad_index=lang.word2id["<pad>"]), None, "LSTM+WT"],
     "5": [LM_LSTM_2_COMPLETA(parametri[1], parametri[0], vocab_len, pad_index=lang.word2id["<pad>"]), None , "LSTM+WT+VD"],
     "6": [LM_LSTM_2_COMPLETA(parametri[1], parametri[0], vocab_len, pad_index=lang.word2id["<pad>"]), None , "LSTM+WT+VD+Nt_AvSGD"],
+    #"7": [LM_LSTM_prova(400, 1150, vocab_len, pad_index=lang.word2id["<pad>"]), None , "LSTM+WT+VD+Nt_AvSGD"],
 }
 
 assignments["1"][1] = optim.SGD(assignments["1"][0].parameters(), lr=learning_rate)
@@ -89,10 +90,10 @@ assignments["3"][1] = optim.AdamW(assignments["3"][0].parameters(), lr=0.001) # 
 assignments["4"][1] = optim.SGD(assignments["4"][0].parameters(), lr=learning_rate)
 assignments["5"][1] = optim.SGD(assignments["5"][0].parameters(), lr=learning_rate)
 assignments["6"][1] = Nt_AvSGD(assignments["6"][0].parameters(), lr=learning_rate, n=5)
+#assignments["7"][1] = Nt_AvSGD(assignments["6"][0].parameters(), lr=learning_rate, n=5)
 
 
 for i in range(1,7):
-
     learning_rates = []
     print("Esperimento: ", assignments[f"{i}"][2])
     model = assignments[f"{i}"][0].to(DEVICE)

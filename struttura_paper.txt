@@ -1,0 +1,19 @@
+3-layer lstm
+1150 hidden units
+400 emb size
+
+All embedding weights
+were uniformly initialized in the interval [−0.1, 0.1] and all other weights were initialized between
+[− √1/H, √1/H], where H is the hidden size.
+
+750 epoche L = 1 n = 5
+
+batch_size = 40
+
+30 learning rate
+
+The values used for dropout on the word vectors, the output between
+LSTM layers, the output of the final LSTM layer, and embedding dropout where (0.4, 0.3, 0.4, 0.1)
+respectively. For the weight-dropped LSTM, a dropout of 0.5 was applied to the recurrent weight
+matrices. For WT2, we increase the input dropout to 0.65 to account for the increased vocabulary
+size

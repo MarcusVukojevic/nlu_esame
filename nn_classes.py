@@ -267,7 +267,8 @@ class LM_LSTM_2_COMPLETA(nn.Module):
         self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True) 
         # Intermediate layer to map from hidden_size to emb_size
         self.out_dropout = LockedDropout()
-        self.output = nn.Linear(hidden_size, output_size)
+        self.hidden_to_emb = nn.Linear(hidden_size, emb_size)  # Layer di adattamento
+        self.output = nn.Linear(emb_size, output_size)
         self.output.weight = self.embedding.weight
 
     def forward(self, input_sequence):
@@ -280,3 +281,37 @@ class LM_LSTM_2_COMPLETA(nn.Module):
         output = self.output(lstm_out).permute(0, 2, 1)
         return output
         
+import math
+
+class LM_LSTM_prova(nn.Module):
+    def __init__(self, emb_size=400, hidden_size=1150, output_size=10000, pad_index=0, 
+                 emb_dropout=0.1, out_dropout=0.4, intermediate_dropout=0.3, n_layers=3):
+        super(LM_LSTM_prova, self).__init__()
+        self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
+        self.embedding_dropout = LockedDropout()
+        self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, dropout=intermediate_dropout, batch_first=True) 
+        self.hidden_to_emb = nn.Linear(hidden_size, emb_size)  # Layer di adattamento
+        self.out_dropout = LockedDropout()
+        self.output = nn.Linear(emb_size, output_size)
+        self.output.weight = self.embedding.weight  # Weight tying
+        
+        self._init_weights(hidden_size, emb_size)
+
+    def _init_weights(self, hidden_size, emb_size):
+        # Initialize embedding weights
+        nn.init.uniform_(self.embedding.weight, -0.1, 0.1)
+        # Initialize LSTM and linear weights
+        for name, param in self.lstm.named_parameters():
+            if 'weight_hh' in name or 'weight_ih' in name:
+                nn.init.uniform_(param, -math.sqrt(1 / hidden_size), math.sqrt(1 / hidden_size))
+        nn.init.uniform_(self.hidden_to_emb.weight, -math.sqrt(1 / hidden_size), math.sqrt(1 / hidden_size))
+        nn.init.uniform_(self.output.weight, -math.sqrt(1 / emb_size), math.sqrt(1 / emb_size))
+
+    def forward(self, input_sequence):
+        emb = self.embedding(input_sequence)
+        emb = self.embedding_dropout(emb, dropout=0.1)
+        lstm_out, _ = self.lstm(emb)
+        lstm_out = self.hidden_to_emb(lstm_out)
+        lstm_out = self.out_dropout(lstm_out, dropout=0.4)
+        output = self.output(lstm_out).permute(0, 2, 1)
+        return output
