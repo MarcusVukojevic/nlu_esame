@@ -113,7 +113,7 @@ class LM_LSTM_NO_DROP(nn.Module):
         return output
 
 class LM_LSTM(nn.Module):
-    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=3):
+    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=1):
         super(LM_LSTM, self).__init__()
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
         # Embedding dropout layer
@@ -138,7 +138,7 @@ import torch
 import torch.nn as nn 
 from torch.autograd import Variable 
  
- 
+"""
 class LockedDropout(nn.Module): 
     def __init__(self): 
         super().__init__() 
@@ -150,6 +150,19 @@ class LockedDropout(nn.Module):
         mask = Variable(m, requires_grad=False) / (1 - dropout) 
         mask = mask.expand_as(x) 
         return mask * x 
+"""
+class LockedDropout(nn.Module):
+    def __init__(self):
+        super(LockedDropout, self).__init__()
+
+    def forward(self, x, dropout=0.5):
+        if not self.training or dropout == 0:
+            return x
+        # Generate the dropout mask that's consistent across the time steps
+        mask = x.new_empty(1, x.size(1), x.size(2), requires_grad=False).bernoulli_(1 - dropout) / (1 - dropout)
+        mask = mask.expand_as(x)  # Ensure the mask is the same size as the input
+        return mask * x
+
 '''
 class LM_LSTM_2(nn.Module): 
     def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, 
@@ -231,7 +244,7 @@ class NTASGD(optim.Optimizer):
                 state['mu'] = 1 / max(1, state['step'] - group['t0'])
 
 class LM_LSTM_2_WT(nn.Module): 
-    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=3): 
+    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=1): 
         super(LM_LSTM_2_WT, self).__init__() 
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
         self.lstm = nn.LSTM(emb_size, hidden_size, n_layers, bidirectional=False, batch_first=True) 
@@ -247,7 +260,7 @@ class LM_LSTM_2_WT(nn.Module):
 
 
 class LM_LSTM_2_COMPLETA(nn.Module): 
-    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=3): 
+    def __init__(self, emb_size, hidden_size, output_size, pad_index=0, out_dropout=0.1, emb_dropout=0.1, n_layers=1): 
         super(LM_LSTM_2_COMPLETA, self).__init__() 
         self.embedding = nn.Embedding(output_size, emb_size, padding_idx=pad_index)
         self.embedding_dropout = LockedDropout()  #nn.Dropout(emb_dropout)
