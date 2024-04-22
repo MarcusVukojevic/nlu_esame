@@ -65,8 +65,8 @@ test_loader = DataLoader(test_dataset, batch_size=128, collate_fn=partial(collat
 architettura = ["lstm_no_drop", "lstm", 'lstm-wt', 'lstm-completa']
 loss_model = ["sgd" , "adam", "nt-avsgd"]
 
-parametri = [300, 300]
-learning_rate = 30
+parametri = [600, 600]
+learning_rate = 10
 
 clip = 5 # Clip the gradient
 vocab_len = len(lang.word2id)
