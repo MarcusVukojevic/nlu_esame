@@ -16,7 +16,7 @@ from utils import read_file, get_vocab, collate_fn
 from functions import init_weights, train_loop, eval_loop
 
 
-DEVICE = 'cuda:0'
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu:0")
 
 
 """

@@ -16,7 +16,8 @@ import os
 
 from ottimizzatore import Nt_AvSGD # ottimizzatore custom
 
-DEVICE = 'cuda:0'
+
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu:0")
 
 
 cartella_risultati = "risultati"
@@ -34,9 +35,9 @@ multipli_di_6 = num_files // 6
 os.chdir("..")
 
 
-train_raw = read_file("dataset/PennTreeBank/ptb.train.txt")#[-1000:]
-dev_raw = read_file("dataset/PennTreeBank/ptb.valid.txt")#[-100:]
-test_raw = read_file("dataset/PennTreeBank/ptb.test.txt")#[-100:]
+train_raw = read_file("dataset/PennTreeBank/ptb.train.txt")
+dev_raw = read_file("dataset/PennTreeBank/ptb.valid.txt")
+test_raw = read_file("dataset/PennTreeBank/ptb.test.txt")
 
 
 vocab = get_vocab(train_raw, ["<pad>", "<eos>"])
@@ -94,6 +95,8 @@ assignments["6"][1] = Nt_AvSGD(assignments["6"][0].parameters(), lr=learning_rat
 
 
 for i in range(1,7):
+    if i != 6:
+        continue
     learning_rates = []
     print("Esperimento: ", assignments[f"{i}"][2])
     model = assignments[f"{i}"][0].to(DEVICE)

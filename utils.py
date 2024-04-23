@@ -2,7 +2,8 @@
 import torch
 import torch.nn as nn
 
-DEVICE = "cuda:0"
+
+DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu:0")
 
 def read_file(path, eos_token="<eos>"):
     output = []

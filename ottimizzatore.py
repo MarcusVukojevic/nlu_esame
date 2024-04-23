@@ -44,7 +44,7 @@ class Nt_AvSGD(Optimizer):
                     # Adesso uso i parametri co n la media
                     ax = state['ax']
                     ax -= group['lr'] * grad 
-                    p.data.copy_(ax) 
+                    p.data.copy_(ax)
                 else:
                     # Update normale del peso
                     p.data -= group['lr'] * grad
