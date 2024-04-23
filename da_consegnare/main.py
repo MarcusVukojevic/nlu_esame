@@ -131,6 +131,8 @@ for i in range(1,7):
     #If the PPL is too high try to change the learning rate
     for epoch in pbar:
         loss = train_loop(train_loader, optimizer, criterion_train, model, clip)
+        if epoch == 3:
+            break
         if epoch % 1 == 0:
             sampled_epochs.append(epoch)
             losses_train.append(np.asarray(loss).mean())
