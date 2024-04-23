@@ -141,7 +141,7 @@ for i in range(1,7):
                 learning_rates.append(f"Epoch {epoch+1}, Current LR: {param_group['lr']}")
     
             if i != 3:
-                scheduler.step(loss_dev) #chiamo lo step dello scheduler per tutti tranne che per AdamW
+                scheduler.step() #chiamo lo step dello scheduler per tutti tranne che per AdamW
             
             # solo per l'ultimo esperimento ho bisogno di chiamare la funzione check, perché sto usando il mio ottimizzatore
             if i == 6:
