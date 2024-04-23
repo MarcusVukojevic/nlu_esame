@@ -17,7 +17,7 @@ from functions import init_weights, train_loop, eval_loop
 
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu:0")
-
+DEVICE = "cuda:0"
 
 """
 
