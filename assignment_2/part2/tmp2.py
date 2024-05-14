@@ -23,7 +23,7 @@ from pprint import pprint
 
 from mio_utils import *
 
-device = 'mps:0'
+device = 'cuda:0'
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 PAD_TOKEN = 0
 
