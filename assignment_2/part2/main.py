@@ -13,11 +13,15 @@ from torch.utils.data import DataLoader
 from collections import Counter
 
 
-from utils import load_data, collate_fn
+from utils import load_data, collate_fn, allineo_slots
 from models import Lang, IntentsAndSlots, ModelIAS
 from functions import init_weights, train_loop, eval_loop
 
-device = 'cpu:0' # cuda:0 means we are using the GPU with id 0, if you have multiple GPU
+
+# BERT model script from: huggingface.co
+
+
+device = 'mps:0' # cuda:0 means we are using the GPU with id 0, if you have multiple GPU
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1" # Used to report errors on CUDA side
 PAD_TOKEN = 0
@@ -71,7 +75,6 @@ lang = Lang(words, intents, slots, PAD_TOKEN ,cutoff=0)
 train_dataset = IntentsAndSlots(train_raw, lang)
 dev_dataset = IntentsAndSlots(dev_raw, lang)
 test_dataset = IntentsAndSlots(test_raw, lang)
-
 
 # Dataloader instantiations
 train_loader = DataLoader(train_dataset, batch_size=128, collate_fn=collate_fn,  shuffle=True)

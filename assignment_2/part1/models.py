@@ -158,7 +158,7 @@ class ModelIAS_BI(nn.Module):
         
         # Concatenating the last hidden states from the forward and backward directions
         last_hidden = torch.cat((last_hidden[-2], last_hidden[-1]), dim=1)
-        
+        last_hidden = self.dropout(last_hidden)
         
         # Computing slot and intent logits
         slots = self.slot_out(utt_encoded)  # batch_size, seq_len, num_slots

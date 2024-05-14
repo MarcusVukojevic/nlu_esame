@@ -23,8 +23,11 @@ os.environ['CUDA_LAUNCH_BLOCKING'] = "1" # Used to report errors on CUDA side
 PAD_TOKEN = 0
 
 
+# ogni dato è un dizionario che contiene 3 chiavi: la richiesta 'utterance', 'slots' e 'intent'
+
 tmp_train_raw = load_data(os.path.join('dataset','ATIS','train.json'))
 test_raw = load_data(os.path.join('dataset','ATIS','test.json'))
+
 
 # First we get the 10% of the training set, then we compute the percentage of these examples 
 portion = 0.10
@@ -42,6 +45,8 @@ for id_y, y in enumerate(intents):
         labels.append(y)
     else:
         mini_train.append(tmp_train_raw[id_y])
+
+
 # Random Stratify
 X_train, X_dev, y_train, y_dev = train_test_split(inputs, labels, test_size=portion, 
                                                     random_state=42, 
@@ -65,13 +70,13 @@ words = sum([x['utterance'].split() for x in train_raw], []) # No set() since we
 corpus = train_raw + dev_raw + test_raw # We do not wat unk labels, # however this depends on the research purpose
 slots = set(sum([line['slots'].split() for line in corpus],[]))
 intents = set([line['intent'] for line in corpus])
+
 lang = Lang(words, intents, slots, PAD_TOKEN ,cutoff=0)
 
 # Create our datasets
 train_dataset = IntentsAndSlots(train_raw, lang)
 dev_dataset = IntentsAndSlots(dev_raw, lang)
 test_dataset = IntentsAndSlots(test_raw, lang)
-
 
 # Dataloader instantiations
 train_loader = DataLoader(train_dataset, batch_size=128, collate_fn=collate_fn,  shuffle=True)
@@ -80,7 +85,7 @@ test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=collate_fn)
 
 
 
-hid_size = 200
+hid_size = 300
 emb_size = 300
 
 lr = 0.0001 # learning rate

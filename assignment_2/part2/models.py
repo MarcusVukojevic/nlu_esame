@@ -8,6 +8,8 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import torch
 import torch.utils.data as data
 
+from utils import allineo_slots
+
 class IntentsAndSlots(data.Dataset):
     # Mandatory methods are __init__, __len__ and __getitem__
     def __init__(self, dataset, lang, unk='unk'):
@@ -52,33 +54,45 @@ class IntentsAndSlots(data.Dataset):
             res.append(tmp_seq)
         return res
 
+class IntentsAndSlotsNew(data.Dataset):
+    def __init__(self, dataset, tokenizer, slots2id, intents2id, max_lunghezza):
+        
+        self.tokenizer = tokenizer
+        self.slots2id = slots2id
+        self.intents2id = intents2id
+        self.max_lunghezza = max_lunghezza
+
+        self.utterances = []
+        self.intents = []
+        self.slots = []
+        self.attentions = []
+
+        for i in dataset:
+            tmp = allineo_slots(i, self.tokenizer, self.slots2id, self.intents2id, self.max_lunghezza) 
+            self.utterances.append(tmp[0])
+            self.intents.append(tmp[3])
+            self.slots.append(tmp[1])
+            self.attentions.append(tmp[2])
+    
+    def __len__(self):
+        return len(self.utterances)
+
+    def __getitem__(self, idx):
+        sample = {
+            'utterance': self.utterances[idx], 
+            'slots': self.slots[idx], 
+            'attention':  self.attentions[idx],
+            'intent': self.intents[idx],
+            }
+        return sample
+
+
 class Lang():
-    def __init__(self, words, intents, slots, PAD_TOKEN, cutoff=0):
-        self.PAD_TOKEN = PAD_TOKEN
-        self.word2id = self.w2id(words, cutoff=cutoff, unk=True)
-        self.slot2id = self.lab2id(slots)
-        self.intent2id = self.lab2id(intents, pad=False)
-        self.id2word = {v:k for k, v in self.word2id.items()}
+    def __init__(self, slots2id, intents2ids):
+        self.slot2id = slots2id
+        self.intent2id = intents2ids
         self.id2slot = {v:k for k, v in self.slot2id.items()}
         self.id2intent = {v:k for k, v in self.intent2id.items()}
-        
-    def w2id(self, elements, cutoff=None, unk=True):
-        vocab = {'pad': self.PAD_TOKEN}
-        if unk:
-            vocab['unk'] = len(vocab)
-        count = Counter(elements)
-        for k, v in count.items():
-            if v > cutoff:
-                vocab[k] = len(vocab)
-        return vocab
-    
-    def lab2id(self, elements, pad=True):
-        vocab = {}
-        if pad:
-            vocab['pad'] = self.PAD_TOKEN
-        for elem in elements:
-                vocab[elem] = len(vocab)
-        return vocab
     
 
 
@@ -127,3 +141,34 @@ class ModelIAS(nn.Module):
         slots = slots.permute(0, 2, 1)  # batch_size, num_slots, seq_len
         
         return slots, intent
+    
+from transformers import BertTokenizer, BertModel
+
+class BertFineTune(nn.Module):
+    def __init__(self, intent_num_labels, slot_num_labels, model_name="bert-base-uncased", dropout_prob=0.1, device="cpu"):
+        super(BertFineTune, self).__init__()
+        self.device = device  # Memorizza il dispositivo come attributo della classe
+        self.bert = BertModel.from_pretrained(model_name).to(device)  # Sposta il modello BERT sul dispositivo specificato
+        self.dropout = nn.Dropout(dropout_prob)
+        self.intent_classifier = nn.Linear(self.bert.config.hidden_size, intent_num_labels).to(device)  # Sposta il classificatore di intenti sul dispositivo
+        self.slot_classifier = nn.Linear(self.bert.config.hidden_size, slot_num_labels).to(device)  # Sposta il classificatore di slot sul dispositivo
+
+    def forward(self, input_ids, attention_mask=None):
+        input_ids = input_ids.to(self.device)
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(self.device)
+        
+        outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)
+        
+        sequence_output = outputs.last_hidden_state
+        pooled_output = outputs.pooler_output
+        
+        sequence_output = self.dropout(sequence_output)
+        pooled_output = self.dropout(pooled_output)
+
+        slot_logits = self.slot_classifier(sequence_output)
+        
+        intent_logits = self.intent_classifier(pooled_output)
+        #print(intent_logits.shape)
+        slot_logits = slot_logits.permute(0, 2, 1)
+        return slot_logits, intent_logits

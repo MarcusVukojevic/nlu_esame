@@ -5,7 +5,7 @@ import torch
 
 
 PAD_TOKEN = 0
-device = "cpu:0"
+device = "mps:0"
 
 def load_data(path):
     '''
@@ -18,41 +18,72 @@ def load_data(path):
     return dataset
 
 def collate_fn(data):
-    def merge(sequences, PAD_TOKEN):
-        '''
-        merge from batch * sent_len to batch * max_len 
-        '''
-        lengths = [len(seq) for seq in sequences]
-        max_len = 1 if max(lengths)==0 else max(lengths)
-        # Pad token is zero in our case
-        # So we create a matrix full of PAD_TOKEN (i.e. 0) with the shape 
-        # batch_size X maximum length of a sequence
-        padded_seqs = torch.LongTensor(len(sequences),max_len).fill_(PAD_TOKEN)
-        for i, seq in enumerate(sequences):
-            end = lengths[i]
-            padded_seqs[i, :end] = seq # We copy each sequence into the matrix
-        # print(padded_seqs)
-        padded_seqs = padded_seqs.detach()  # We remove these tensors from the computational graph
-        return padded_seqs, lengths
+    # Crea dizionari per il batch raccolto
+    batch = {
+        'utterances': [],
+        'slots': [],
+        'attention_masks': [],
+        'intents': [],
+        'slots_len': []
+    }
+
+    # Appendi ciascun elemento del dataset a una lista nel batch
+    for item in data:
+        batch['utterances'].append(item['utterance'])
+        batch['slots'].append(item['slots'])
+        batch['attention_masks'].append(item['attention'])
+        batch['intents'].append(item['intent'])  # questo è presumibilmente un intero
+        batch["slots_len"].append(len(item['slots'][:(list(item['slots'][1:]).index(0)) + 2]))
     
-    # Sort data by seq lengths
-    data.sort(key=lambda x: len(x['utterance']), reverse=True) 
-    new_item = {}
-    for key in data[0].keys():
-        new_item[key] = [d[key] for d in data]
-        
-    # We just need one length for packed pad seq, since len(utt) == len(slots)
-    src_utt, _ = merge(new_item['utterance'], PAD_TOKEN)
-    y_slots, y_lengths = merge(new_item["slots"], PAD_TOKEN)
-    intent = torch.LongTensor(new_item["intent"])
+    # Stack di ciascun elemento della lista in un unico tensore per il batch
+    batch['utterances'] = torch.stack(batch['utterances']).to(device)
+    batch['slots'] = torch.stack(batch['slots']).to(device)
+    batch['attention_masks'] = torch.stack(batch['attention_masks']).to(device)
+    batch['intents'] = torch.tensor(batch['intents']).to(device)  # Converti la lista di int in tensore
+    batch["slots_len"] = torch.tensor(batch['slots_len']).to(device)
+    #print(batch)
+    #print(batch['utterances'].shape)      
+    #print(batch['slots'].shape)
+    #print(batch['attention_masks'].shape)
+    #print(batch['intents'].shape)
+    #print(batch["slots_len"].shape)
+    return batch
+
+def allineo_slots(item, tokenizer, slots2id, intents2id, max_lunghezza):
+    slot_finale = []
+    text = item["utterance"]
+    labels = item["slots"].split()
+    for i, testo in enumerate(text.split()):
+        testo_token = tokenizer.tokenize(testo)
+        if len(testo_token) != 1:
+            for j in range(len(testo_token)):
+                if j != 0 and labels[i] != "O":
+                    slot_finale.append(labels[i].replace('B-', 'I-'))
+                else:
+                    slot_finale.append(labels[i])
+        else:   
+            slot_finale.append(labels[i])
+
+    slot_finale_tok = [slots2id[f] for f in slot_finale]
+    slot_finale_tok = [0] + slot_finale_tok + [0]*(max_lunghezza-len(slot_finale_tok) - 1)
+    inten_finale_tok = intents2id[item["intent"]]
+
+    testo_tokenizzato = tokenizer.encode_plus(text, add_special_tokens=True, return_attention_mask=True,  return_tensors='pt')
+    # Padding del tensor degli input_ids
+    if testo_tokenizzato['input_ids'].size(1) < max_lunghezza:
+        padding_length = max_lunghezza - testo_tokenizzato['input_ids'].size(1)
+        # Padding
+        padded_input_ids = torch.cat([
+            testo_tokenizzato['input_ids'], 
+            torch.zeros((1, padding_length), dtype=torch.long)
+        ], dim=1)
+
+        padded_mask = torch.cat([
+            testo_tokenizzato['attention_mask'], 
+            torch.zeros((1, padding_length), dtype=torch.long)
+        ], dim=1)
+    else:
+        padded_input_ids = testo_tokenizzato['input_ids']
+        padded_mask  = testo_tokenizzato['attention_mask']
     
-    src_utt = src_utt.to(device) # We load the Tensor on our selected device
-    y_slots = y_slots.to(device)
-    intent = intent.to(device)
-    y_lengths = torch.LongTensor(y_lengths).to(device)
-    
-    new_item["utterances"] = src_utt
-    new_item["intents"] = intent
-    new_item["y_slots"] = y_slots
-    new_item["slots_len"] = y_lengths
-    return new_item
+    return padded_input_ids[0], torch.tensor(slot_finale_tok), padded_mask[0], inten_finale_tok
