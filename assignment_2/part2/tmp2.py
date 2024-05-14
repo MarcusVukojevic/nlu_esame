@@ -94,12 +94,12 @@ test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=collate_fn)
 
 lr = 0.0001 # learning rate
 clip = 5 # Clip the gradient
-
+lr = 5e-5
 
 out_slot = len(lang.slot2id)
 out_int = len(lang.intent2id)
 
-n_epochs = 200
+n_epochs = 50
 runs = 5
 
 slot_f1s, intent_acc = [], []
