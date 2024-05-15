@@ -25,8 +25,8 @@ device = 'mps:0'
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 PAD_TOKEN = 0
 
-tmp_train_raw = load_data(os.path.join('dataset','ATIS','train.json'))
-test_raw = load_data(os.path.join('dataset','ATIS','test.json'))
+tmp_train_raw = load_data(os.path.join('dataset','ATIS','train.json'))[:300]
+test_raw = load_data(os.path.join('dataset','ATIS','test.json'))[:300]
 
 portion = 0.10
 
@@ -86,7 +86,7 @@ dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=collate_fn)
 test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=collate_fn)
 
 
-lr = 0.1 # learning rate
+lr = 0.0001 # learning rate
 clip = 5 # Clip the gradient
 #lr = 5e-5
 
@@ -98,10 +98,10 @@ runs = 5
 
 slot_f1s, intent_acc = [], []
 
+optimizer = optim.Adam(model.parameters(), lr=lr)
 
 
 modello = BertFineTune(model, intent_len, slot_len, device=device).to(device)
-optimizer = optim.Adam(modello.parameters(), lr=lr)
 
 criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
 criterion_intents = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
