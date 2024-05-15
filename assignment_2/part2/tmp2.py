@@ -13,9 +13,7 @@ from collections import Counter
 
 
 from utils import load_data
-from models import  ModelIAS, IntentsAndSlotsNew, BertFineTune
 from functions import init_weights, train_loop, eval_loop
-from copy import deepcopy
 
 # BERT model script from: huggingface.co
 from transformers import BertTokenizer, BertModel
@@ -23,7 +21,7 @@ from pprint import pprint
 
 from mio_utils import *
 
-device = 'cuda:0'
+device = 'mps:0'
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 PAD_TOKEN = 0
 
@@ -53,10 +51,6 @@ X_train, X_dev, y_train, y_dev = train_test_split(inputs, labels, test_size=port
 X_train.extend(mini_train)
 train_raw = X_train
 dev_raw = X_dev
-
-
-slot2id = {'pad':PAD_TOKEN} # Pad tokens is 0 so the index count should start from 1
-intent2id = {}
 
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") # Download the tokenizer
 model = BertModel.from_pretrained("bert-base-uncased") # Download the model
@@ -92,24 +86,25 @@ dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=collate_fn)
 test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=collate_fn)
 
 
-lr = 0.0001 # learning rate
+lr = 0.1 # learning rate
 clip = 5 # Clip the gradient
-lr = 5e-5
+#lr = 5e-5
 
-out_slot = len(lang.slot2id)
-out_int = len(lang.intent2id)
+slot_len = len(lang.slot2id)
+intent_len = len(lang.intent2id)
 
-n_epochs = 50
+n_epochs = 10
 runs = 5
 
 slot_f1s, intent_acc = [], []
 
 
-model = BertFineTune(out_slot, out_int, device=device).to(device)
 
-optimizer = optim.Adam(model.parameters(), lr=lr)
+modello = BertFineTune(model, intent_len, slot_len, device=device).to(device)
+optimizer = optim.Adam(modello.parameters(), lr=lr)
+
 criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
-criterion_intents = nn.CrossEntropyLoss()
+criterion_intents = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
 
 patience = 3
 losses_train = []
@@ -119,12 +114,12 @@ best_f1 = 0
 for x in range(1,n_epochs):
     print("N_epoch:", x)
     loss = train_loop(train_loader, optimizer, criterion_slots, 
-                        criterion_intents, model)
-    if x % 5 == 0:
+                        criterion_intents, modello)
+    if x % 2 == 0:
         sampled_epochs.append(x)
         losses_train.append(np.asarray(loss).mean())
         results_dev, intent_res, loss_dev = eval_loop(dev_loader, criterion_slots, 
-                                                        criterion_intents, model, lang, tokenizer)
+                                                        criterion_intents, modello, lang, tokenizer)
         losses_dev.append(np.asarray(loss_dev).mean())
         f1 = results_dev['total']['f']
 
@@ -136,7 +131,7 @@ for x in range(1,n_epochs):
             break # Not nice but it keeps the code clean
 
 results_test, intent_test, _ = eval_loop(test_loader, criterion_slots, 
-                                            criterion_intents, model, lang, tokenizer)
+                                            criterion_intents, modello, lang, tokenizer)
 intent_acc.append(intent_test['accuracy'])
 slot_f1s.append(results_test['total']['f'])
 print("gugu")

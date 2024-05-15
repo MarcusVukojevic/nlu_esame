@@ -145,18 +145,17 @@ class ModelIAS(nn.Module):
 from transformers import BertTokenizer, BertModel
 
 class BertFineTune(nn.Module):
-    def __init__(self, intent_num_labels, slot_num_labels, model_name="bert-base-uncased", dropout_prob=0.1, device="cpu"):
-        super(BertFineTune, self).__init__()
+    def __init__(self,model, intent_num_labels, slot_num_labels, dropout_prob=0.1, device="cpu"):
+        super().__init__()
         self.device = device  # Memorizza il dispositivo come attributo della classe
-        self.bert = BertModel.from_pretrained(model_name).to(device)  # Sposta il modello BERT sul dispositivo specificato
+        self.bert = model.to(device)  # Sposta il modello BERT sul dispositivo specificato
         self.dropout = nn.Dropout(dropout_prob)
         self.intent_classifier = nn.Linear(self.bert.config.hidden_size, intent_num_labels).to(device)  # Sposta il classificatore di intenti sul dispositivo
         self.slot_classifier = nn.Linear(self.bert.config.hidden_size, slot_num_labels).to(device)  # Sposta il classificatore di slot sul dispositivo
 
     def forward(self, input_ids, attention_mask=None):
         input_ids = input_ids.to(self.device)
-        if attention_mask is not None:
-            attention_mask = attention_mask.to(self.device)
+        attention_mask = attention_mask.to(self.device)
         
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)
         
@@ -172,3 +171,5 @@ class BertFineTune(nn.Module):
         #print(intent_logits.shape)
         slot_logits = slot_logits.permute(0, 2, 1)
         return slot_logits, intent_logits
+    
+        
