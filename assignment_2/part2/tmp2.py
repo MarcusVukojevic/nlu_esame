@@ -145,7 +145,7 @@ for run in range(5):
                     "slot2id": lang.slot2id, 
                     "intent2id": lang.intent2id}
     plt.figure(run)
-    torch.save(saving_object, PATH)
+    #torch.save(saving_object, PATH)
     plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
     plt.title('Train and Dev Losses')
     plt.ylabel('Loss')
