@@ -13,21 +13,29 @@ from torch.utils.data import DataLoader
 from collections import Counter
 
 
-from utils import load_data, collate_fn
+from utils import load_data, collate_fn, allineo_slots
 from models import Lang, IntentsAndSlots, ModelIAS, ModelIAS_BI
 from functions import init_weights, train_loop, eval_loop
+from transformers import BertTokenizer, BertModel
 
 device = 'cpu:0' # cuda:0 means we are using the GPU with id 0, if you have multiple GPU
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1" # Used to report errors on CUDA side
 PAD_TOKEN = 0
 
-
 # ogni dato è un dizionario che contiene 3 chiavi: la richiesta 'utterance', 'slots' e 'intent'
 
 tmp_train_raw = load_data(os.path.join('dataset','train.txt'))
 test_raw = load_data(os.path.join('dataset','test.txt'))
 
+
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") # Download the tokenizer
+model = BertModel.from_pretrained("bert-base-uncased") # Download the model
+
+
+new_train_raw = []
+for i in tmp_train_raw:
+    new_train_raw.append(allineo_slots(i,tokenizer))
 exit()
 
 # First we get the 10% of the training set, then we compute the percentage of these examples 

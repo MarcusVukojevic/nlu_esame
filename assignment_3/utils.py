@@ -41,6 +41,27 @@ def load_data(path):
                 dataset.append({'sentence': sentence.strip(), 'tokens': tokens, 'labels': labels})
     return dataset
 
+def allineo_slots(item, tokenizer):
+    slot_finale = []
+    labels = item["labels"]
+
+    for i, testo in enumerate(item["tokens"]):
+        testo_token = tokenizer.tokenize(testo)
+        if len(testo_token) != 1:
+            print(testo_token)
+            print(item["tokens"])
+            print(item["labels"])
+            exit()
+            for j in range(len(testo_token)):
+                if j != 0 and labels[i] != "O":
+                    slot_finale.append(labels[i].replace('B-', 'I-'))
+                else:
+                    slot_finale.append(labels[i])
+        else:   
+            slot_finale.append(labels[i])
+    item["labels"] = " ".join(slot_finale)
+    return item
+    
 
 def collate_fn(data):
     def merge(sequences, PAD_TOKEN):
