@@ -1,21 +1,46 @@
 # tutte le funzioni per  caricare il dataset
 
-import json
 import torch
 
 
 PAD_TOKEN = 0
 device = "cpu:0"
 
+
+import re
+
 def load_data(path):
     '''
-        input: path/to/data
-        output: json 
+        input: path/to/data.txt
+        output: list of dicts with tokens and labels
     '''
     dataset = []
-    with open(path) as f:
-        dataset = json.loads(f.read())
+    # Definisci un insieme di etichette valide
+    valid_labels = {'O', 'T-POS', 'T-NEG', 'T-NEU'}
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+        for line in lines:
+            if "####" in line:  # Assicurati che la linea contenga il separatore
+                sentence, tagged_tokens = line.split("####")
+                tokens = []
+                labels = []
+                tagged_tokens = tagged_tokens.strip().split()
+                for tagged_token in tagged_tokens:
+                    # Utilizza una regex per estrarre token e label
+                    match = re.match(r"(.+)=(\S+)", tagged_token)
+                    if match:
+                        token, label = match.groups()
+                        if label in valid_labels:
+                            tokens.append(token)
+                            labels.append(label)
+                        else:
+                            print(f"Label '{label}' not recognized in token: {tagged_token}")
+                    else:
+                        print(f"Skipping malformed token: {tagged_token}")
+                # Aggiungi la frase e le etichette corrispondenti al dataset
+                dataset.append({'sentence': sentence.strip(), 'tokens': tokens, 'labels': labels})
     return dataset
+
 
 def collate_fn(data):
     def merge(sequences, PAD_TOKEN):

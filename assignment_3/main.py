@@ -25,9 +25,10 @@ PAD_TOKEN = 0
 
 # ogni dato è un dizionario che contiene 3 chiavi: la richiesta 'utterance', 'slots' e 'intent'
 
-tmp_train_raw = load_data(os.path.join('dataset','ATIS','train.json'))
-test_raw = load_data(os.path.join('dataset','ATIS','test.json'))
+tmp_train_raw = load_data(os.path.join('dataset','train.txt'))
+test_raw = load_data(os.path.join('dataset','test.txt'))
 
+exit()
 
 # First we get the 10% of the training set, then we compute the percentage of these examples 
 portion = 0.10

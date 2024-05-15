@@ -1,7 +1,6 @@
 #  required functions to iumplement the exercise
 import torch.nn as nn
 import torch
-from conll import evaluate
 from sklearn.metrics import classification_report
 
 def init_weights(mat):
@@ -81,7 +80,7 @@ def eval_loop(data, criterion_slots, criterion_intents, model, lang):
                     tmp_seq.append((utterance[id_el], lang.id2slot[elem]))
                 hyp_slots.append(tmp_seq)
     try:            
-        results = evaluate(ref_slots, hyp_slots)
+        results = ""#evaluate(ref_slots, hyp_slots)
     except Exception as ex:
         # Sometimes the model predicts a class that is not in REF
         print("Warning:", ex)
