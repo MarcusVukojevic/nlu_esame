@@ -16,21 +16,27 @@ PAD_TOKEN = 0
 device = "cuda:0"
 
 def allineo_slots(item, tokenizer):
-    slot_finale = []
+    #slot_finale = []
     text = item["utterance"]
-    labels = item["slots"].split()
-
+    #labels = item["slots"].split()
+    new_testo = []
     for i, testo in enumerate(text.split()):
         testo_token = tokenizer.tokenize(testo)
-        if len(testo_token) != 1:
-            for j in range(len(testo_token)):
-                if j != 0 and labels[i] != "O":
-                    slot_finale.append(labels[i].replace('B-', 'I-'))
-                else:
-                    slot_finale.append(labels[i])
-        else:   
-            slot_finale.append(labels[i])
-    item["slots"] = " ".join(slot_finale)
+        new_testo.append(testo_token[0])
+        #if len(testo_token) != 1:
+        #    for j in range(len(testo_token)):
+        #        if j != 0 and labels[i] != "O":
+        #            slot_finale.append(labels[i].replace('B-', 'I-'))
+        #        else:
+        #            slot_finale.append(labels[i])
+        #else:   
+        #    slot_finale.append(labels[i])
+    #item["slots"] = " ".join(slot_finale)
+    item["utterance"] = new_testo
+    if len(item["utterance"]) == len(item["slots"].split()):
+        pass
+    else:
+        print("gugu")
     return item
     
 class Lang():

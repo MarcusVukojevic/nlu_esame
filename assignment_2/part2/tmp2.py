@@ -79,7 +79,6 @@ lang = Lang(intents, slots, PAD_TOKEN ,cutoff=0)
 train_dataset = IntentsAndSlots(new_train_raw, lang, tokenizer)
 dev_dataset = IntentsAndSlots(new_dev_raw, lang, tokenizer)
 test_dataset = IntentsAndSlots(new_test_raw, lang, tokenizer)
-
 # Dataloader instantiations
 train_loader = DataLoader(train_dataset, batch_size=128, collate_fn=collate_fn, shuffle=True)
 dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=collate_fn)
