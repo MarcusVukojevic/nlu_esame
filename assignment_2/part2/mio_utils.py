@@ -13,7 +13,7 @@ from conll import evaluate
 from sklearn.metrics import classification_report
 
 PAD_TOKEN = 0
-device = "mps:0"
+device = "cuda:0"
 
 def allineo_slots(item, tokenizer):
     #slot_finale = []
