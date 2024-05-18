@@ -54,7 +54,7 @@ def eval_loop(data, criterion_labels, model, lang, tokenizer):
         pred_ts = [['O'] * len(seq) for seq in hyp_slots]
         
         # Chiamare la funzione evaluate
-        results = evaluate(ref_slots, gold_ts, hyp_slots, pred_ts)
+        results = evaluate(gold_ts, ref_slots,pred_ts, hyp_slots)
 
         # Stampare i risultati
         ote_scores, _ = results  # Ignora TS scores se non necessari
