@@ -40,7 +40,7 @@ def eval_loop(data, criterion_labels, model, lang, tokenizer):
             
             for id_seq in range(len(output_labels)):
                 length = sample['labels_len'][id_seq].tolist()  # Lunghezza reale della sequenza
-                utt_ids = sample['tokens'][id_seq][:length].tolist()
+                #utt_ids = sample['tokens'][id_seq][:length].tolist()
                 gt_ids = sample['y_labels'][id_seq][:length].tolist()
                 gt_slots = [lang.id2lables[elem] for elem in gt_ids]
                 #utterance = [tokenizer.convert_ids_to_tokens(tok) for tok in utt_ids]

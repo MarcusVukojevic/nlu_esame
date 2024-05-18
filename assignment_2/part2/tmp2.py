@@ -152,7 +152,6 @@ for run in range(5):
     plt.legend()
     plt.show()
     plt.savefig(f"results_{run}.png")
-    exit()
 
 
 # printa il calcolo finale
