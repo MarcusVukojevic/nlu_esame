@@ -4,19 +4,18 @@ import torch
 
 
 PAD_TOKEN = 0
-device = "cpu:0"
+device = "mps:0"
 
 
 import re
 
-def load_data(path):
+def load_data(path, valid_labels):
     '''
         input: path/to/data.txt
         output: list of dicts with tokens and labels
     '''
     dataset = []
     # Definisci un insieme di etichette valide
-    valid_labels = {'O', 'T-POS', 'T-NEG', 'T-NEU'}
     with open(path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
         for line in lines:
@@ -42,24 +41,14 @@ def load_data(path):
     return dataset
 
 def allineo_slots(item, tokenizer):
-    slot_finale = []
-    labels = item["labels"]
-
+    nuovo_testo = []
     for i, testo in enumerate(item["tokens"]):
         testo_token = tokenizer.tokenize(testo)
-        if len(testo_token) != 1:
-            print(testo_token)
-            print(item["tokens"])
-            print(item["labels"])
-            exit()
-            for j in range(len(testo_token)):
-                if j != 0 and labels[i] != "O":
-                    slot_finale.append(labels[i].replace('B-', 'I-'))
-                else:
-                    slot_finale.append(labels[i])
-        else:   
-            slot_finale.append(labels[i])
-    item["labels"] = " ".join(slot_finale)
+        nuovo_testo.append(testo_token[0])
+    tmp = tokenizer.encode_plus(" ".join(nuovo_testo),add_special_tokens=True, return_attention_mask=True,  return_tensors='pt')
+    item["tokens"] = tmp["input_ids"][0]
+    item["attention"] = tmp["attention_mask"][0]
+    item["labels"] = ["O"] + item["labels"] + ["O"]
     return item
     
 
@@ -82,23 +71,22 @@ def collate_fn(data):
         return padded_seqs, lengths
     
     # Sort data by seq lengths
-    data.sort(key=lambda x: len(x['utterance']), reverse=True) 
+    data.sort(key=lambda x: len(x['tokens']), reverse=True) 
     new_item = {}
     for key in data[0].keys():
         new_item[key] = [d[key] for d in data]
         
     # We just need one length for packed pad seq, since len(utt) == len(slots)
-    src_utt, _ = merge(new_item['utterance'], PAD_TOKEN)
-    y_slots, y_lengths = merge(new_item["slots"], PAD_TOKEN)
-    intent = torch.LongTensor(new_item["intent"])
-    
-    src_utt = src_utt.to(device) # We load the Tensor on our selected device
-    y_slots = y_slots.to(device)
-    intent = intent.to(device)
+    src_tokens, _ = merge(new_item['tokens'], PAD_TOKEN)
+    y_lables, y_lengths = merge(new_item["labels"], PAD_TOKEN)
+    src_att, _ = merge(new_item["attention"], PAD_TOKEN)
+    src_tokens = src_tokens.to(device) # We load the Tensor on our selected device
+    y_lables = y_lables.to(device)
     y_lengths = torch.LongTensor(y_lengths).to(device)
-    
-    new_item["utterances"] = src_utt
-    new_item["intents"] = intent
-    new_item["y_slots"] = y_slots
-    new_item["slots_len"] = y_lengths
+
+    new_item = {}
+    new_item["tokens"] = src_tokens
+    new_item["y_labels"] = y_lables
+    new_item["attention"] = src_att
+    new_item["labels_len"] = y_lengths
     return new_item

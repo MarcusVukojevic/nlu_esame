@@ -2,37 +2,15 @@
 import torch.nn as nn
 import torch
 from sklearn.metrics import classification_report
+from evals import evaluate
 
-def init_weights(mat):
-    for m in mat.modules():
-        if type(m) in [nn.GRU, nn.LSTM, nn.RNN]:
-            for name, param in m.named_parameters():
-                if 'weight_ih' in name:
-                    for idx in range(4):
-                        mul = param.shape[0]//4
-                        torch.nn.init.xavier_uniform_(param[idx*mul:(idx+1)*mul])
-                elif 'weight_hh' in name:
-                    for idx in range(4):
-                        mul = param.shape[0]//4
-                        torch.nn.init.orthogonal_(param[idx*mul:(idx+1)*mul])
-                elif 'bias' in name:
-                    param.data.fill_(0)
-        else:
-            if type(m) in [nn.Linear]:
-                torch.nn.init.uniform_(m.weight, -0.01, 0.01)
-                if m.bias != None:
-                    m.bias.data.fill_(0.01)
-
-def train_loop(data, optimizer, criterion_slots, criterion_intents, model, clip=5):
+def train_loop(data, optimizer, criterion_labels, model, clip=5):
     model.train()
     loss_array = []
     for sample in data:
         optimizer.zero_grad() # Zeroing the gradient
-        slots, intent = model(sample['utterances'], sample['slots_len'])
-        loss_intent = criterion_intents(intent, sample['intents'])
-        loss_slot = criterion_slots(slots, sample['y_slots'])
-        loss = loss_intent + loss_slot # In joint training we sum the losses. 
-                                       # Is there another way to do that?
+        labels = model(sample['tokens'], sample['attention'])
+        loss = criterion_labels(labels, sample['y_labels'])
         loss_array.append(loss.item())
         loss.backward() # Compute the gradient, deleting the computational graph
         # clip the gradient to avoid exploding gradients
@@ -40,47 +18,50 @@ def train_loop(data, optimizer, criterion_slots, criterion_intents, model, clip=
         optimizer.step() # Update the weights
     return loss_array
 
-def eval_loop(data, criterion_slots, criterion_intents, model, lang):
+def eval_loop(data, criterion_labels, model, lang, tokenizer):
     model.eval()
     loss_array = []
     
-    ref_intents = []
-    hyp_intents = []
-    
     ref_slots = []
     hyp_slots = []
-    #softmax = nn.Softmax(dim=1) # Use Softmax if you need the actual probability
-    with torch.no_grad(): # It used to avoid the creation of computational graph
+
+    with torch.no_grad():  # Evita la creazione del grafico computazionale
         for sample in data:
-            slots, intents = model(sample['utterances'], sample['slots_len'])
-            loss_intent = criterion_intents(intents, sample['intents'])
-            loss_slot = criterion_slots(slots, sample['y_slots'])
-            loss = loss_intent + loss_slot 
-            loss_array.append(loss.item())
-            # Intent inference
-            # Get the highest probable class
-            out_intents = [lang.id2intent[x] 
-                           for x in torch.argmax(intents, dim=1).tolist()] 
-            gt_intents = [lang.id2intent[x] for x in sample['intents'].tolist()]
-            ref_intents.extend(gt_intents)
-            hyp_intents.extend(out_intents)
+            input_ids = sample['tokens']
+            attention_mask = sample['attention']
+            labels = model(input_ids, attention_mask)
             
-            # Slot inference 
-            output_slots = torch.argmax(slots, dim=1)
-            for id_seq, seq in enumerate(output_slots):
-                length = sample['slots_len'].tolist()[id_seq]
-                utt_ids = sample['utterance'][id_seq][:length].tolist()
-                gt_ids = sample['y_slots'][id_seq].tolist()
-                gt_slots = [lang.id2slot[elem] for elem in gt_ids[:length]]
-                utterance = [lang.id2word[elem] for elem in utt_ids]
-                to_decode = seq[:length].tolist()
-                ref_slots.append([(utterance[id_el], elem) for id_el, elem in enumerate(gt_slots)])
-                tmp_seq = []
-                for id_el, elem in enumerate(to_decode):
-                    tmp_seq.append((utterance[id_el], lang.id2slot[elem]))
-                hyp_slots.append(tmp_seq)
-    try:            
-        results = ""#evaluate(ref_slots, hyp_slots)
+            # Calcola la perdita (opzionale se ti serve solo per la valutazione)
+            loss = criterion_labels(labels, sample['y_labels'])
+            loss_array.append(loss.item())
+            
+            # Inferenza delle etichette predette
+            output_labels = torch.argmax(labels, dim=1)  # Assumi che labels abbia shape (batch_size, seq_len, num_labels)
+            
+            for id_seq in range(len(output_labels)):
+                length = sample['labels_len'][id_seq].tolist()  # Lunghezza reale della sequenza
+                utt_ids = sample['tokens'][id_seq][:length].tolist()
+                gt_ids = sample['y_labels'][id_seq][:length].tolist()
+                gt_slots = [lang.id2lables[elem] for elem in gt_ids]
+                #utterance = [tokenizer.convert_ids_to_tokens(tok) for tok in utt_ids]
+                to_decode = output_labels[id_seq][:length].tolist()
+                ref_slots.append(gt_slots)
+                hyp_slots.append([lang.id2lables[elem] for elem in to_decode])
+
+    try:
+        # Creare un placeholder per TS (sentiment analysis) se non necessario
+        gold_ts = [['O'] * len(seq) for seq in ref_slots]
+        pred_ts = [['O'] * len(seq) for seq in hyp_slots]
+        
+        # Chiamare la funzione evaluate
+        results = evaluate(ref_slots, gold_ts, hyp_slots, pred_ts)
+
+        # Stampare i risultati
+        ote_scores, _ = results  # Ignora TS scores se non necessari
+        print("Opinion Target Extraction (OTE) metrics:")
+        print("Precision:", ote_scores[0])
+        print("Recall:", ote_scores[1])
+        print("F1-score:", ote_scores[2])
     except Exception as ex:
         # Sometimes the model predicts a class that is not in REF
         print("Warning:", ex)
@@ -89,6 +70,5 @@ def eval_loop(data, criterion_slots, criterion_intents, model, lang):
         print(hyp_s.difference(ref_s))
         results = {"total":{"f":0}}
         
-    report_intent = classification_report(ref_intents, hyp_intents, 
-                                          zero_division=False, output_dict=True)
-    return results, report_intent, loss_array
+    
+    return results, loss_array

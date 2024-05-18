@@ -14,58 +14,41 @@ from collections import Counter
 
 
 from utils import load_data, collate_fn, allineo_slots
-from models import Lang, IntentsAndSlots, ModelIAS, ModelIAS_BI
-from functions import init_weights, train_loop, eval_loop
+from models import Lang, TokensAndLabels, BertFineTune
+from functions import train_loop, eval_loop
 from transformers import BertTokenizer, BertModel
 
-device = 'cpu:0' # cuda:0 means we are using the GPU with id 0, if you have multiple GPU
+device = 'mps:0' # cuda:0 means we are using the GPU with id 0, if you have multiple GPU
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1" # Used to report errors on CUDA side
 PAD_TOKEN = 0
 
-# ogni dato è un dizionario che contiene 3 chiavi: la richiesta 'utterance', 'slots' e 'intent'
+valid_labels = {'O', 'T-POS', 'T-NEG', 'T-NEU'}
 
-tmp_train_raw = load_data(os.path.join('dataset','train.txt'))
-test_raw = load_data(os.path.join('dataset','test.txt'))
+tmp_train_raw = load_data(os.path.join('dataset','train.txt'), valid_labels)
+test_raw = load_data(os.path.join('dataset','test.txt'), valid_labels)
+
+portion = 0.10
+
+# Dividere il dataset di addestramento in set di addestramento e di test
+train_data, dev_data = train_test_split(tmp_train_raw, test_size=portion, random_state=42, shuffle=True)
+
 
 
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") # Download the tokenizer
 model = BertModel.from_pretrained("bert-base-uncased") # Download the model
 
-
 new_train_raw = []
-for i in tmp_train_raw:
+for i in train_data:
     new_train_raw.append(allineo_slots(i,tokenizer))
-exit()
 
-# First we get the 10% of the training set, then we compute the percentage of these examples 
-portion = 0.10
+new_test_raw = []
+for i in test_raw:
+    new_test_raw.append(allineo_slots(i,tokenizer))
 
-intents = [x['intent'] for x in tmp_train_raw] # We stratify on intents
-count_y = Counter(intents)
-
-labels = []
-inputs = []
-mini_train = []
-
-for id_y, y in enumerate(intents):
-    if count_y[y] > 1: # If some intents occurs only once, we put them in training
-        inputs.append(tmp_train_raw[id_y])
-        labels.append(y)
-    else:
-        mini_train.append(tmp_train_raw[id_y])
-
-
-# Random Stratify
-X_train, X_dev, y_train, y_dev = train_test_split(inputs, labels, test_size=portion, 
-                                                    random_state=42, 
-                                                    shuffle=True,
-                                                    stratify=labels)
-X_train.extend(mini_train)
-train_raw = X_train
-dev_raw = X_dev
-
-y_test = [x['intent'] for x in test_raw]
+new_dev_data = []
+for i in dev_data:
+    new_dev_data.append(allineo_slots(i,tokenizer))
 
 
 
@@ -74,52 +57,41 @@ slot2id = {'pad':PAD_TOKEN} # Pad tokens is 0 so the index count should start fr
 intent2id = {}
 
 
-words = sum([x['utterance'].split() for x in train_raw], []) # No set() since we want to compute 
-                                                            # the cutoff
-corpus = train_raw + dev_raw + test_raw # We do not wat unk labels, # however this depends on the research purpose
-slots = set(sum([line['slots'].split() for line in corpus],[]))
-intents = set([line['intent'] for line in corpus])
+corpus = new_train_raw + new_test_raw + new_dev_data 
+slots = set(sum([line['labels'] for line in corpus],[])) # sarebbe uguale a valid labels
 
-lang = Lang(words, intents, slots, PAD_TOKEN ,cutoff=0)
+
+lang = Lang(slots, PAD_TOKEN ,cutoff=0)
+
 
 # Create our datasets
-train_dataset = IntentsAndSlots(train_raw, lang)
-dev_dataset = IntentsAndSlots(dev_raw, lang)
-test_dataset = IntentsAndSlots(test_raw, lang)
+train_dataset = TokensAndLabels(new_train_raw, lang)
+dev_dataset = TokensAndLabels(new_dev_data, lang)
+test_dataset = TokensAndLabels(new_test_raw, lang)
 
 # Dataloader instantiations
 train_loader = DataLoader(train_dataset, batch_size=128, collate_fn=collate_fn,  shuffle=True)
 dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=collate_fn)
 test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=collate_fn)
 
-
-
-hid_size = 300
-emb_size = 300
-
-lr = 0.0001 # learning rate
+#lr = 0.0001 # learning rate
 clip = 5 # Clip the gradient
+lr = 5e-5
 
+label_len = len(lang.labels2id)
 
-out_slot = len(lang.slot2id)
-out_int = len(lang.intent2id)
-vocab_len = len(lang.word2id)
-
-n_epochs = 200
+n_epochs = 20
 runs = 5
 
-slot_f1s, intent_acc = [], []
+slot_f1s = []
 
-for x in tqdm(range(0, runs)):
 
-    model = ModelIAS_BI(hid_size, out_slot, out_int, emb_size, 
-                     vocab_len, pad_index=PAD_TOKEN).to(device)
-    model.apply(init_weights)
+for run in range(1):
+    modello = BertFineTune(model, label_len, device=device).to(device)
+    optimizer = optim.Adam(modello.parameters(), lr=lr)
 
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
-    criterion_intents = nn.CrossEntropyLoss()
-    
+    criterion_labels = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
+
     patience = 3
     losses_train = []
     losses_dev = []
@@ -127,15 +99,15 @@ for x in tqdm(range(0, runs)):
     best_f1 = 0
     for x in range(1,n_epochs):
         print("N_epoch:", x)
-        loss = train_loop(train_loader, optimizer, criterion_slots, 
-                          criterion_intents, model)
+        loss = train_loop(train_loader, optimizer, criterion_labels, modello)
+        #print("Loss: ", loss)
         if x % 5 == 0:
             sampled_epochs.append(x)
             losses_train.append(np.asarray(loss).mean())
-            results_dev, intent_res, loss_dev = eval_loop(dev_loader, criterion_slots, 
-                                                          criterion_intents, model, lang)
+            results_dev, loss_dev = eval_loop(dev_loader, criterion_labels, modello, lang, tokenizer)
+            # precision recall f1
             losses_dev.append(np.asarray(loss_dev).mean())
-            f1 = results_dev['total']['f']
+            f1 = results_dev[0][2]
 
             if f1 > best_f1:
                 best_f1 = f1
@@ -144,32 +116,38 @@ for x in tqdm(range(0, runs)):
             if patience <= 0: # Early stopping with patient
                 break # Not nice but it keeps the code clean
 
-    results_test, intent_test, _ = eval_loop(test_loader, criterion_slots, 
-                                             criterion_intents, model, lang)
-    intent_acc.append(intent_test['accuracy'])
-    slot_f1s.append(results_test['total']['f'])
-
+    
+    results_test, loss_test = eval_loop(test_loader, criterion_labels, modello, lang, tokenizer)
+    print("gugu")
+    print(results_test)
+    
+    slot_f1s.append(results_test[0][2])
+    #print("gugu")
+    #print(results_test['total']['f'])
     #PATH = os.path.join("bin", "model_1")
+    #if not os.path.exists(os.path.dirname(PATH)):
+    #    os.makedirs(os.path.dirname(PATH))
     #saving_object = {"epoch": x, 
     #                "model": model.state_dict(), 
     #                "optimizer": optimizer.state_dict(), 
-    #                "w2id": w2id, 
-    #                "slot2id": slot2id, 
-    #                "intent2id": intent2id}
-    #torch.save(saving_object, PATH)
-
-    plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
-    plt.title('Train and Dev Losses')
-    plt.ylabel('Loss')
-    plt.xlabel('Epochs')
-    plt.plot(sampled_epochs, losses_train, label='Train loss')
-    plt.plot(sampled_epochs, losses_dev, label='Dev loss')
-    plt.legend()
-    plt.show()
+    #                "slot2id": lang.slot2id, 
+    #                "intent2id": lang.intent2id}
+    ##torch.save(saving_object, PATH)
+    #plt.figure(num = run, figsize=(8, 5)).patch.set_facecolor('white')
+    #plt.title('Train and Dev Losses')
+    #plt.ylabel('Loss')
+    #plt.xlabel('Epochs')
+    #plt.plot(sampled_epochs, losses_train, label='Train loss')
+    #plt.plot(sampled_epochs, losses_dev, label='Dev loss')
+    #plt.legend()
+    #plt.show()
+    #plt.savefig(f"results_{run}.png")
+    exit()
 
 
 # printa il calcolo finale
+print(slot_f1s)
 slot_f1s = np.asarray(slot_f1s)
-intent_acc = np.asarray(intent_acc)
+#intent_acc = np.asarray(intent_acc)
 print('Slot F1', round(slot_f1s.mean(),3), '+-', round(slot_f1s.std(),3))
-print('Intent Acc', round(intent_acc.mean(), 3), '+-', round(slot_f1s.std(), 3))
+#print('Intent Acc', round(intent_acc.mean(), 3), '+-', round(slot_f1s.std(), 3))

@@ -17,11 +17,10 @@ from functions import init_weights, train_loop, eval_loop
 
 # BERT model script from: huggingface.co
 from transformers import BertTokenizer, BertModel
-from pprint import pprint
 
 from mio_utils import *
 
-device = 'cuda:0'
+device = 'mps:0'
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 PAD_TOKEN = 0
 
@@ -153,6 +152,7 @@ for run in range(5):
     plt.legend()
     plt.show()
     plt.savefig(f"results_{run}.png")
+    exit()
 
 
 # printa il calcolo finale
