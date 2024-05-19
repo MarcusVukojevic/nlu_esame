@@ -2,7 +2,7 @@
 import torch.nn as nn
 import torch
 from sklearn.metrics import classification_report
-from evals import evaluate
+from evals import evaluate, evaluate_ote, evaluate_ts
 
 def train_loop(data, optimizer, criterion_labels, model, clip=5):
     model.train()
@@ -17,6 +17,19 @@ def train_loop(data, optimizer, criterion_labels, model, clip=5):
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)  
         optimizer.step() # Update the weights
     return loss_array
+
+def split_labels(tags):
+    ote_labels = []
+    ts_labels = []
+    for tag in tags:
+        if tag.startswith('T-'):
+            ote_labels.append('T')
+            ts_labels.append(tag[2:])
+        else:
+            ote_labels.append(tag)
+            ts_labels.append(tag)
+    return ote_labels, ts_labels
+
 
 def eval_loop(data, criterion_labels, model, lang, tokenizer):
     model.eval()
@@ -50,18 +63,20 @@ def eval_loop(data, criterion_labels, model, lang, tokenizer):
 
     try:
         # Creare un placeholder per TS (sentiment analysis) se non necessario
-        gold_ts = [['O'] * len(seq) for seq in ref_slots]
-        pred_ts = [['O'] * len(seq) for seq in hyp_slots]
-        
+        gold_ot = [] # --> tutti i T
+        gold_ts = [] # tutti i POS, NEG, NEU
+        pred_ot = [] # tutti i T
+        pred_ts = [] # tutti i POS, NEG, NEU
+        for i in hyp_slots:
+            new = split_labels(i)
+            pred_ot.append(new[0])
+            pred_ts.append(new[1])
+        for i in ref_slots:
+            new = split_labels(i)
+            gold_ot.append(new[0])
+            gold_ts.append(new[1])
         # Chiamare la funzione evaluate
-        results = evaluate(gold_ts, ref_slots,pred_ts, hyp_slots)
-
-        # Stampare i risultati
-        ote_scores, _ = results  # Ignora TS scores se non necessari
-        print("Opinion Target Extraction (OTE) metrics:")
-        print("Precision:", ote_scores[0])
-        print("Recall:", ote_scores[1])
-        print("F1-score:", ote_scores[2])
+        results = evaluate(gold_ot, gold_ts, pred_ot, pred_ts)
     except Exception as ex:
         # Sometimes the model predicts a class that is not in REF
         print("Warning:", ex)

@@ -25,8 +25,8 @@ PAD_TOKEN = 0
 
 valid_labels = {'O', 'T-POS', 'T-NEG', 'T-NEU'}
 
-tmp_train_raw = load_data(os.path.join('dataset','train.txt'), valid_labels)
-test_raw = load_data(os.path.join('dataset','test.txt'), valid_labels)
+tmp_train_raw = load_data(os.path.join('dataset','train.txt'), valid_labels)[:300]
+test_raw = load_data(os.path.join('dataset','test.txt'), valid_labels)[:300]
 
 portion = 0.10
 
@@ -114,6 +114,7 @@ for run in range(1):
             else:
                 patience -= 1
             if patience <= 0: # Early stopping with patient
+                print("pat")
                 break # Not nice but it keeps the code clean
 
     
