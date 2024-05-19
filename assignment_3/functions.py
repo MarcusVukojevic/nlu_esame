@@ -77,6 +77,7 @@ def eval_loop(data, criterion_labels, model, lang, tokenizer):
             gold_ts.append(new[1])
         # Chiamare la funzione evaluate
         results = evaluate(gold_ot, gold_ts, pred_ot, pred_ts)
+        print(results)
     except Exception as ex:
         # Sometimes the model predicts a class that is not in REF
         print("Warning:", ex)
