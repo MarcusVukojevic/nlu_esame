@@ -50,7 +50,7 @@ def eval_loop(data, criterion_labels, model, lang, tokenizer):
             
             # Inferenza delle etichette predette
             output_labels = torch.argmax(labels, dim=1)  # Assumi che labels abbia shape (batch_size, seq_len, num_labels)
-            
+            print(output_labels)
             for id_seq in range(len(output_labels)):
                 length = sample['labels_len'][id_seq].tolist()  # Lunghezza reale della sequenza
                 #utt_ids = sample['tokens'][id_seq][:length].tolist()

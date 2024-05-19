@@ -18,15 +18,15 @@ from models import Lang, TokensAndLabels, BertFineTune
 from functions import train_loop, eval_loop
 from transformers import BertTokenizer, BertModel
 
-device = 'cuda:0' # cuda:0 means we are using the GPU with id 0, if you have multiple GPU
+device = 'mps:0' # cuda:0 means we are using the GPU with id 0, if you have multiple GPU
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1" # Used to report errors on CUDA side
 PAD_TOKEN = 0
 
 valid_labels = {'O', 'T-POS', 'T-NEG', 'T-NEU'}
 
-tmp_train_raw = load_data(os.path.join('dataset','train.txt'), valid_labels)
-test_raw = load_data(os.path.join('dataset','test.txt'), valid_labels)
+tmp_train_raw = load_data(os.path.join('dataset','train.txt'), valid_labels)[:100]
+test_raw = load_data(os.path.join('dataset','test.txt'), valid_labels)[:100]
 
 portion = 0.10
 
@@ -57,11 +57,7 @@ slot2id = {'pad':PAD_TOKEN} # Pad tokens is 0 so the index count should start fr
 intent2id = {}
 
 
-corpus = new_train_raw + new_test_raw + new_dev_data 
-slots = set(sum([line['labels'] for line in corpus],[])) # sarebbe uguale a valid labels
-
-
-lang = Lang(slots, PAD_TOKEN ,cutoff=0)
+lang = Lang(valid_labels, PAD_TOKEN ,cutoff=0)
 
 
 # Create our datasets
@@ -100,7 +96,7 @@ for run in range(1):
     for x in range(1,n_epochs):
         print("N_epoch:", x)
         loss = train_loop(train_loader, optimizer, criterion_labels, modello)
-        #print("Loss: ", loss)
+        print("Loss: ", loss)
         if x % 5 == 0:
             sampled_epochs.append(x)
             losses_train.append(np.asarray(loss).mean())

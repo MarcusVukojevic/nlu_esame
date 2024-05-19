@@ -4,7 +4,7 @@ import torch
 
 
 PAD_TOKEN = 0
-device = "cuda:0"
+device = "mps:0"
 
 
 import re
