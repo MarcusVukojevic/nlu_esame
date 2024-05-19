@@ -13,7 +13,7 @@ from evals import evaluate, evaluate_ote, evaluate_ts
 from seqeval.metrics import f1_score, precision_score, recall_score
 
 # Set device
-device = 'mps:0' if torch.cuda.is_available() else 'cpu'
+device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"  # Used to report errors on CUDA side
 PAD_TOKEN = 0
 
@@ -146,7 +146,7 @@ model.to(device)
 
 # Training parameters
 lr = 5e-5
-n_epochs = 20
+n_epochs = 50
 clip = 5  # Gradient clipping
 optimizer = optim.Adam(model.parameters(), lr=lr)
 criterion_labels = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
