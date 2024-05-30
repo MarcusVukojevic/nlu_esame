@@ -39,8 +39,8 @@ portion = 0.10
 # Dividere il dataset di addestramento in set di addestramento e di test
 train_data, dev_data = train_test_split(convertito_train_tmp, test_size=portion, random_state=42, shuffle=True)
 
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") # Download the tokenizer
-model = BertModel.from_pretrained("bert-base-uncased") # Download the model
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", force_download=True) # Download the tokenizer
+model = BertModel.from_pretrained("bert-base-uncased", force_download=True) # Download the model
 
 
 new_train_raw = []
@@ -75,25 +75,25 @@ dev_dataset = TokensAndLabels(new_dev_data, lang)
 test_dataset = TokensAndLabels(new_test_raw, lang)
 
 # Dataloader instantiations
-train_loader = DataLoader(train_dataset, batch_size=128, collate_fn=collate_fn,  shuffle=True)
-dev_loader = DataLoader(dev_dataset, batch_size=64, collate_fn=collate_fn)
-test_loader = DataLoader(test_dataset, batch_size=64, collate_fn=collate_fn)
+train_loader = DataLoader(train_dataset, batch_size=32, collate_fn=collate_fn,  shuffle=True)
+dev_loader = DataLoader(dev_dataset, batch_size=16, collate_fn=collate_fn)
+test_loader = DataLoader(test_dataset, batch_size=16, collate_fn=collate_fn)
 
 #lr = 0.0001 # learning rate
 clip = 5 # Clip the gradient
-lr = 5e-5
+lr = 2e-5
 
 ote_label_len = len(lang.ote_2_id)
 ts_label_len = len(lang.ts_2_id)
 
 
-n_epochs = 20
+n_epochs = 50
 runs = 5
 
 slot_f1s = []
 
 
-for run in range(1):
+for run in range(runs):
 
     modello = BertFineTune(model, ote_label_len, ts_label_len, device=device).to(device)
     optimizer = optim.Adam(modello.parameters(), lr=lr)
@@ -109,7 +109,7 @@ for run in range(1):
     for x in range(1,n_epochs):
         print("N_epoch:", x)
         loss = train_loop(train_loader, optimizer, criterion_ote_labels, criterion_ts_labels, modello)
-        print("Loss: ", loss)
+        #print("Loss: ", loss)
         if x % 5 == 0:
             sampled_epochs.append(x)
             losses_train.append(np.asarray(loss).mean())
@@ -153,7 +153,6 @@ for run in range(1):
     #plt.legend()
     #plt.show()
     #plt.savefig(f"results_{run}.png")
-    exit()
 
 
 # printa il calcolo finale
