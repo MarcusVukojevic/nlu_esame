@@ -11,7 +11,7 @@ from evals import evaluate, evaluate_ote, evaluate_ts
 from utils_eval import *
 
 PAD_TOKEN = 0
-device = "mps:0"
+device = "cuda:0"
 
 class Lang():
     def __init__(self, ote_label, ts_labels, PAD_TOKEN, cutoff=0):
