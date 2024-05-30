@@ -150,7 +150,7 @@ class BertFineTune(nn.Module):
         self.device = device  # Memorizza il dispositivo come attributo della classe
         self.bert = model.to(device)  # Sposta il modello BERT sul dispositivo specificato
         self.dropout = nn.Dropout(dropout_prob)
-        self.dropout_2 = nn.Dropout(0.3)
+        self.dropout_2 = nn.Dropout(0.4)
         self.ote_classifier = nn.Linear(self.bert.config.hidden_size, ote_label_len).to(device)  
         self.ts_classifier = nn.Linear(self.bert.config.hidden_size, ts_label_len).to(device) 
 
