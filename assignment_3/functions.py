@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch
 from sklearn.metrics import classification_report
 from evals import evaluate, evaluate_ote, evaluate_ts
+from utils_eval import *
 
 def train_loop(data, optimizer, criterion_labels, model, clip=5):
     model.train()
@@ -17,6 +18,26 @@ def train_loop(data, optimizer, criterion_labels, model, clip=5):
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)  
         optimizer.step() # Update the weights
     return loss_array
+
+def convert_tags_to_bieos(data):
+    finale = []
+    
+    for idx, item in enumerate(data):
+        original_ote_tags = item["ote_tags"]
+        original_ts_tags = item["ts_tags"]
+        
+        converted_ote_tags = ot2bieos_ote(original_ote_tags)
+        converted_ts_tags = ot2bieos_ts(original_ts_tags)
+        
+        finale.append({
+            "sentence": item["sentence"],
+            "words": item["words"],
+            "ote_tags": converted_ote_tags,
+            "ts_tags": converted_ts_tags,
+        })
+    
+    return finale
+
 
 def split_labels(tags):
     ote_labels = []
@@ -50,7 +71,7 @@ def eval_loop(data, criterion_labels, model, lang, tokenizer):
             
             # Inferenza delle etichette predette
             output_labels = torch.argmax(labels, dim=1)  # Assumi che labels abbia shape (batch_size, seq_len, num_labels)
-            print(output_labels)
+            #print(output_labels)
             for id_seq in range(len(output_labels)):
                 length = sample['labels_len'][id_seq].tolist()  # Lunghezza reale della sequenza
                 #utt_ids = sample['tokens'][id_seq][:length].tolist()
@@ -58,26 +79,29 @@ def eval_loop(data, criterion_labels, model, lang, tokenizer):
                 gt_slots = [lang.id2lables[elem] for elem in gt_ids]
                 #utterance = [tokenizer.convert_ids_to_tokens(tok) for tok in utt_ids]
                 to_decode = output_labels[id_seq][:length].tolist()
+                #print(to_decode, [lang.id2lables[elem] for elem in to_decode])
                 ref_slots.append(gt_slots)
                 hyp_slots.append([lang.id2lables[elem] for elem in to_decode])
-
+            
     try:
         # Creare un placeholder per TS (sentiment analysis) se non necessario
-        gold_ot = [] # --> tutti i T
-        gold_ts = [] # tutti i POS, NEG, NEU
-        pred_ot = [] # tutti i T
-        pred_ts = [] # tutti i POS, NEG, NEU
+        #hyp_slots ref_slots
+        print(hyp_slots)
+        tmp = []
         for i in hyp_slots:
-            new = split_labels(i)
-            pred_ot.append(new[0])
-            pred_ts.append(new[1])
-        for i in ref_slots:
-            new = split_labels(i)
-            gold_ot.append(new[0])
-            gold_ts.append(new[1])
+            tmp.append(" ".join(i))
+        hyp_slots_tradotto = set_labels(tmp)
+        ref_slots_tradotto = set_labels(ref_slots)
+        print(hyp_slots_tradotto)
+        gold_ot = ot2bieos_ote(ref_slots_tradotto["ote_tags"])
+        gold_ts = ot2bieos_ts(ref_slots_tradotto["ts_tags"])
+
+        pred_ot = ot2bieos_ote(hyp_slots_tradotto["ote_tags"])
+        pred_ts = ot2bieos_ts(hyp_slots_tradotto["ts_tags"])
         # Chiamare la funzione evaluate
         results = evaluate(gold_ot, gold_ts, pred_ot, pred_ts)
         print(results)
+        exit()
     except Exception as ex:
         # Sometimes the model predicts a class that is not in REF
         print("Warning:", ex)

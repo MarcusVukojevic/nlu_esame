@@ -624,7 +624,7 @@ def set_lm_labels(dataset, vocab, stm_lex, stm_win=3):
     return dataset
 
 
-def build_dataset(ds_name, input_win=1, tagging_schema='BIO', stm_win=1):
+def build_dataset(input_win=1, tagging_schema='BIO', stm_win=1):
     """
     build dataset for model training, development and inference
     :param ds_name: dataset name
@@ -636,8 +636,8 @@ def build_dataset(ds_name, input_win=1, tagging_schema='BIO', stm_win=1):
     # read mpqa sentiment lexicon
     stm_lex = read_lexicon()
     # paths of training and testing dataset
-    train_path = './data/%s_train.txt' % ds_name
-    test_path = './data/%s_test.txt' % ds_name
+    train_path = './dataset/train.txt'
+    test_path = './dataset/test.txt'
     # loaded datasets
     train_set = read_data(path=train_path)
     test_set = read_data(path=test_path)

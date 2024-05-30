@@ -31,7 +31,6 @@ def evaluate_ote(gold_ot, pred_ot):
     ote_scores = (ot_precision, ot_recall, ot_f1)
     return ote_scores
 
-
 def evaluate_ts(gold_ts, pred_ts):
     """
     evaluate the model performance for the ts task

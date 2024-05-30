@@ -50,6 +50,7 @@ def allineo_slots(item, tokenizer):
     item["attention"] = tmp["attention_mask"][0]
     item["labels"] = ["O"] + item["labels"] + ["O"]
     return item
+
     
 
 def collate_fn(data):
