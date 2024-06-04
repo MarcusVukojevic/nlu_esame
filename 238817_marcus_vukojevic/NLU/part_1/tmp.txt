@@ -1,0 +1,17 @@
+Slot F1 0.921 +- 0.005
+Intent Acc 0.936 +- 0.005
+
+
+post implementazione
+
+Slot F1 0.935 +- 0.003
+Intent Acc 0.941 +- 0.003
+
+Slot F1 0.936 +- 0.002
+Intent Acc 0.942 +- 0.002
+
+
+300 300
+
+Slot F1 0.933 +- 0.002
+Intent Acc 0.946 +- 0.002

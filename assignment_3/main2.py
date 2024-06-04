@@ -13,7 +13,7 @@ from torch.utils.data import DataLoader
 from collections import Counter
 
 from utils_eval import *
-from functions import  eval_loop, convert_tags_to_bieos
+from functions import  convert_tags_to_bieos
 from transformers import BertTokenizer, BertModel
 
 from mio_functions import *
