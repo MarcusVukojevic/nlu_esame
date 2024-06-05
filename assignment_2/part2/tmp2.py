@@ -152,7 +152,7 @@ for run in range(5):
         plt.plot(sampled_epochs, losses_dev, label='Dev loss')
         plt.legend()
         plt.show()
-        plt.savefig(f"results_{run}.png")
+        plt.savefig(f"results__1_{run}.png")
 
 
 # printa il calcolo finale
