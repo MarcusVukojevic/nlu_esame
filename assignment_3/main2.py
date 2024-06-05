@@ -39,8 +39,8 @@ portion = 0.10
 # Dividere il dataset di addestramento in set di addestramento e di test
 train_data, dev_data = train_test_split(convertito_train_tmp, test_size=portion, random_state=42, shuffle=True)
 
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased", force_download=True) # Download the tokenizer
-model = BertModel.from_pretrained("bert-base-uncased", force_download=True) # Download the model
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased") # Download the tokenizer
+model = BertModel.from_pretrained("bert-base-uncased") # Download the model
 
 
 new_train_raw = []
@@ -133,26 +133,26 @@ for run in range(runs):
     print(results_test)
     
     slot_f1s.append(results_test[0][2])
-    #print("gugu")
-    #print(results_test['total']['f'])
-    #PATH = os.path.join("bin", "model_1")
-    #if not os.path.exists(os.path.dirname(PATH)):
-    #    os.makedirs(os.path.dirname(PATH))
-    #saving_object = {"epoch": x, 
-    #                "model": model.state_dict(), 
-    #                "optimizer": optimizer.state_dict(), 
-    #                "slot2id": lang.slot2id, 
-    #                "intent2id": lang.intent2id}
-    ##torch.save(saving_object, PATH)
-    #plt.figure(num = run, figsize=(8, 5)).patch.set_facecolor('white')
-    #plt.title('Train and Dev Losses')
-    #plt.ylabel('Loss')
-    #plt.xlabel('Epochs')
-    #plt.plot(sampled_epochs, losses_train, label='Train loss')
-    #plt.plot(sampled_epochs, losses_dev, label='Dev loss')
-    #plt.legend()
-    #plt.show()
-    #plt.savefig(f"results_{run}.png")
+    if results_test[0][2] > max(slot_f1s) or len(slot_f1s) == 0:
+        #print(results_test['total']['f'])
+        PATH = os.path.join("bin", "sent")
+        if not os.path.exists(os.path.dirname(PATH)):
+            os.makedirs(os.path.dirname(PATH))
+        saving_object = {"epoch": x, 
+                        "model": model.state_dict(), 
+                        "optimizer": optimizer.state_dict(), 
+                        "ote_2_id": lang.ote_2_id, 
+                        "ite_2_id": lang.ts_2_id}
+        torch.save(saving_object, PATH)
+        plt.figure(num = run, figsize=(8, 5)).patch.set_facecolor('white')
+        plt.title('Train and Dev Losses')
+        plt.ylabel('Loss')
+        plt.xlabel('Epochs')
+        plt.plot(sampled_epochs, losses_train, label='Train loss')
+        plt.plot(sampled_epochs, losses_dev, label='Dev loss')
+        plt.legend()
+        plt.show()
+        plt.savefig(f"results_{run}.png")
 
 
 # printa il calcolo finale

@@ -134,24 +134,25 @@ for run in range(5):
     slot_f1s.append(results_test['total']['f'])
     print("gugu")
     print(results_test['total']['f'])
-    PATH = os.path.join("bin", "model_1")
-    if not os.path.exists(os.path.dirname(PATH)):
-        os.makedirs(os.path.dirname(PATH))
-    saving_object = {"epoch": x, 
-                    "model": model.state_dict(), 
-                    "optimizer": optimizer.state_dict(), 
-                    "slot2id": lang.slot2id, 
-                    "intent2id": lang.intent2id}
-    #torch.save(saving_object, PATH)
-    plt.figure(num = run, figsize=(8, 5)).patch.set_facecolor('white')
-    plt.title('Train and Dev Losses')
-    plt.ylabel('Loss')
-    plt.xlabel('Epochs')
-    plt.plot(sampled_epochs, losses_train, label='Train loss')
-    plt.plot(sampled_epochs, losses_dev, label='Dev loss')
-    plt.legend()
-    plt.show()
-    plt.savefig(f"results_{run}.png")
+    if results_test['total']['f'] > max(slot_f1s) or len(slot_f1s) == 0:
+        PATH = os.path.join("bin", "bert_s_i")
+        if not os.path.exists(os.path.dirname(PATH)):
+            os.makedirs(os.path.dirname(PATH))
+        saving_object = {"epoch": x, 
+                        "model": model.state_dict(), 
+                        "optimizer": optimizer.state_dict(), 
+                        "slot2id": lang.slot2id, 
+                        "intent2id": lang.intent2id}
+        #torch.save(saving_object, PATH)
+        plt.figure(num = run, figsize=(8, 5)).patch.set_facecolor('white')
+        plt.title('Train and Dev Losses')
+        plt.ylabel('Loss')
+        plt.xlabel('Epochs')
+        plt.plot(sampled_epochs, losses_train, label='Train loss')
+        plt.plot(sampled_epochs, losses_dev, label='Dev loss')
+        plt.legend()
+        plt.show()
+        plt.savefig(f"results_{run}.png")
 
 
 # printa il calcolo finale
