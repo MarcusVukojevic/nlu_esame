@@ -103,6 +103,7 @@ slot_f1s, intent_acc = [], []
 for gugu in range(2):
     if gugu == 0:
         print("NO DROP")
+        continue
     else:
         print("TUTTO")
     for x in tqdm(range(0, runs)):
@@ -110,7 +111,7 @@ for gugu in range(2):
             model = ModelIAS_BI_NO_DROP(hid_size, out_slot, out_int, emb_size, 
                             vocab_len, pad_index=PAD_TOKEN).to(device)
         else:
-            gugu = ModelIAS_BI(hid_size, out_slot, out_int, emb_size, 
+            model = ModelIAS_BI(hid_size, out_slot, out_int, emb_size, 
                             vocab_len, pad_index=PAD_TOKEN).to(device)
         model.apply(init_weights)
 
