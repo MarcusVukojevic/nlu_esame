@@ -99,8 +99,8 @@ vocab_len = len(lang.word2id)
 n_epochs = 200
 runs = 5
 
-slot_f1s, intent_acc = [], []
 for gugu in range(2):
+    slot_f1s, intent_acc = [], []
     if gugu == 0:
         print("NO DROP")
     else:
@@ -124,7 +124,7 @@ for gugu in range(2):
         sampled_epochs = []
         best_f1 = 0
         for x in range(1,n_epochs):
-            print("N_epoch:", x)
+            #print("N_epoch:", x)
             loss = train_loop(train_loader, optimizer, criterion_slots, 
                             criterion_intents, model)
             if x % 5 == 0:
