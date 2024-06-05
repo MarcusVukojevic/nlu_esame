@@ -100,13 +100,17 @@ n_epochs = 200
 runs = 5
 
 slot_f1s, intent_acc = [], []
-for model in range(2):
+for gugu in range(2):
+    if gugu == 0:
+        print("NO DROP")
+    else:
+        print("TUTTO")
     for x in tqdm(range(0, runs)):
-        if model == 0:
+        if gugu == 0:
             model = ModelIAS_BI_NO_DROP(hid_size, out_slot, out_int, emb_size, 
                             vocab_len, pad_index=PAD_TOKEN).to(device)
         else:
-            model = ModelIAS_BI(hid_size, out_slot, out_int, emb_size, 
+            gugu = ModelIAS_BI(hid_size, out_slot, out_int, emb_size, 
                             vocab_len, pad_index=PAD_TOKEN).to(device)
         model.apply(init_weights)
 
@@ -142,24 +146,28 @@ for model in range(2):
                                                 criterion_intents, model, lang)
         intent_acc.append(intent_test['accuracy'])
         slot_f1s.append(results_test['total']['f'])
+        if results_test['total']['f'] > max(slot_f1s) or len(slot_f1s) == 0:
+            if gugu == 0:
+                PATH = os.path.join("bin", "model_no_drop")
+            else:
+                PATH = os.path.join("bin", "model_completo")
+            saving_object = {"epoch": x, 
+                            "model": model.state_dict(), 
+                            "optimizer": optimizer.state_dict(), 
+                            "w2id": w2id, 
+                            "slot2id": slot2id, 
+                            "intent2id": intent2id}
+            torch.save(saving_object, PATH)
 
-        #PATH = os.path.join("bin", "model_1")
-        #saving_object = {"epoch": x, 
-        #                "model": model.state_dict(), 
-        #                "optimizer": optimizer.state_dict(), 
-        #                "w2id": w2id, 
-        #                "slot2id": slot2id, 
-        #                "intent2id": intent2id}
-        #torch.save(saving_object, PATH)
-
-        plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
-        plt.title('Train and Dev Losses')
-        plt.ylabel('Loss')
-        plt.xlabel('Epochs')
-        plt.plot(sampled_epochs, losses_train, label='Train loss')
-        plt.plot(sampled_epochs, losses_dev, label='Dev loss')
-        plt.legend()
-        plt.show()
+            plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
+            plt.title('Train and Dev Losses')
+            plt.ylabel('Loss')
+            plt.xlabel('Epochs')
+            plt.plot(sampled_epochs, losses_train, label='Train loss')
+            plt.plot(sampled_epochs, losses_dev, label='Dev loss')
+            plt.legend()
+            plt.show()
+            plt.savefig(f"results_{gugu}.png")
 
 
     # printa il calcolo finale
