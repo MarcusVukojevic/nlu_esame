@@ -172,7 +172,7 @@ class ModelIAS_BI(nn.Module):
 
 class ModelIAS_BI_NO_DROP(nn.Module):
     def __init__(self, hid_size, out_slot, out_int, emb_size, vocab_len, n_layer=1, pad_index=0):
-        super(ModelIAS_BI, self).__init__()
+        super(ModelIAS_BI_NO_DROP, self).__init__()
         # Initialization parameters
         self.embedding = nn.Embedding(vocab_len, emb_size, padding_idx=pad_index)
         
