@@ -14,7 +14,7 @@ from collections import Counter
 
 
 from utils import load_data, collate_fn
-from models import Lang, IntentsAndSlots, ModelIAS, ModelIAS_BI
+from models import Lang, IntentsAndSlots, ModelIAS_BI, ModelIAS_BI_NO_DROP
 from functions import init_weights, train_loop, eval_loop
 
 device = 'cpu:0' # cuda:0 means we are using the GPU with id 0, if you have multiple GPU
@@ -100,67 +100,70 @@ n_epochs = 200
 runs = 5
 
 slot_f1s, intent_acc = [], []
+for model in range(2):
+    for x in tqdm(range(0, runs)):
+        if model == 0:
+            model = ModelIAS_BI_NO_DROP(hid_size, out_slot, out_int, emb_size, 
+                            vocab_len, pad_index=PAD_TOKEN).to(device)
+        else:
+            model = ModelIAS_BI(hid_size, out_slot, out_int, emb_size, 
+                            vocab_len, pad_index=PAD_TOKEN).to(device)
+        model.apply(init_weights)
 
-for x in tqdm(range(0, runs)):
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+        criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
+        criterion_intents = nn.CrossEntropyLoss()
+        
+        patience = 3
+        losses_train = []
+        losses_dev = []
+        sampled_epochs = []
+        best_f1 = 0
+        for x in range(1,n_epochs):
+            print("N_epoch:", x)
+            loss = train_loop(train_loader, optimizer, criterion_slots, 
+                            criterion_intents, model)
+            if x % 5 == 0:
+                sampled_epochs.append(x)
+                losses_train.append(np.asarray(loss).mean())
+                results_dev, intent_res, loss_dev = eval_loop(dev_loader, criterion_slots, 
+                                                            criterion_intents, model, lang)
+                losses_dev.append(np.asarray(loss_dev).mean())
+                f1 = results_dev['total']['f']
 
-    model = ModelIAS_BI(hid_size, out_slot, out_int, emb_size, 
-                     vocab_len, pad_index=PAD_TOKEN).to(device)
-    model.apply(init_weights)
+                if f1 > best_f1:
+                    best_f1 = f1
+                else:
+                    patience -= 1
+                if patience <= 0: # Early stopping with patient
+                    break # Not nice but it keeps the code clean
 
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion_slots = nn.CrossEntropyLoss(ignore_index=PAD_TOKEN)
-    criterion_intents = nn.CrossEntropyLoss()
-    
-    patience = 3
-    losses_train = []
-    losses_dev = []
-    sampled_epochs = []
-    best_f1 = 0
-    for x in range(1,n_epochs):
-        print("N_epoch:", x)
-        loss = train_loop(train_loader, optimizer, criterion_slots, 
-                          criterion_intents, model)
-        if x % 5 == 0:
-            sampled_epochs.append(x)
-            losses_train.append(np.asarray(loss).mean())
-            results_dev, intent_res, loss_dev = eval_loop(dev_loader, criterion_slots, 
-                                                          criterion_intents, model, lang)
-            losses_dev.append(np.asarray(loss_dev).mean())
-            f1 = results_dev['total']['f']
+        results_test, intent_test, _ = eval_loop(test_loader, criterion_slots, 
+                                                criterion_intents, model, lang)
+        intent_acc.append(intent_test['accuracy'])
+        slot_f1s.append(results_test['total']['f'])
 
-            if f1 > best_f1:
-                best_f1 = f1
-            else:
-                patience -= 1
-            if patience <= 0: # Early stopping with patient
-                break # Not nice but it keeps the code clean
+        #PATH = os.path.join("bin", "model_1")
+        #saving_object = {"epoch": x, 
+        #                "model": model.state_dict(), 
+        #                "optimizer": optimizer.state_dict(), 
+        #                "w2id": w2id, 
+        #                "slot2id": slot2id, 
+        #                "intent2id": intent2id}
+        #torch.save(saving_object, PATH)
 
-    results_test, intent_test, _ = eval_loop(test_loader, criterion_slots, 
-                                             criterion_intents, model, lang)
-    intent_acc.append(intent_test['accuracy'])
-    slot_f1s.append(results_test['total']['f'])
-
-    #PATH = os.path.join("bin", "model_1")
-    #saving_object = {"epoch": x, 
-    #                "model": model.state_dict(), 
-    #                "optimizer": optimizer.state_dict(), 
-    #                "w2id": w2id, 
-    #                "slot2id": slot2id, 
-    #                "intent2id": intent2id}
-    #torch.save(saving_object, PATH)
-
-    plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
-    plt.title('Train and Dev Losses')
-    plt.ylabel('Loss')
-    plt.xlabel('Epochs')
-    plt.plot(sampled_epochs, losses_train, label='Train loss')
-    plt.plot(sampled_epochs, losses_dev, label='Dev loss')
-    plt.legend()
-    plt.show()
+        plt.figure(num = 3, figsize=(8, 5)).patch.set_facecolor('white')
+        plt.title('Train and Dev Losses')
+        plt.ylabel('Loss')
+        plt.xlabel('Epochs')
+        plt.plot(sampled_epochs, losses_train, label='Train loss')
+        plt.plot(sampled_epochs, losses_dev, label='Dev loss')
+        plt.legend()
+        plt.show()
 
 
-# printa il calcolo finale
-slot_f1s = np.asarray(slot_f1s)
-intent_acc = np.asarray(intent_acc)
-print('Slot F1', round(slot_f1s.mean(),3), '+-', round(slot_f1s.std(),3))
-print('Intent Acc', round(intent_acc.mean(), 3), '+-', round(slot_f1s.std(), 3))
+    # printa il calcolo finale
+    slot_f1s = np.asarray(slot_f1s)
+    intent_acc = np.asarray(intent_acc)
+    print('Slot F1', round(slot_f1s.mean(),3), '+-', round(slot_f1s.std(),3))
+    print('Intent Acc', round(intent_acc.mean(), 3), '+-', round(slot_f1s.std(), 3))
