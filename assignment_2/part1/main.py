@@ -103,7 +103,6 @@ slot_f1s, intent_acc = [], []
 for gugu in range(2):
     if gugu == 0:
         print("NO DROP")
-        continue
     else:
         print("TUTTO")
     for x in tqdm(range(0, runs)):
